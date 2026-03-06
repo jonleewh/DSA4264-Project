@@ -1,0 +1,64 @@
+# DATASETS / DATA FILES
+
+# Data folders
+data/
+datasets/
+dataset/
+raw_data/
+processed_data/
+outputs/
+results/
+tmp/
+
+# Common data file formats
+*.json
+*.csv
+*.tsv
+*.parquet
+*.feather
+*.h5
+*.hdf5
+*.db
+*.sqlite
+*.pickle
+*.pkl
+
+# LARGE FILES / ARCHIVES
+*.zip
+*.tar
+*.tar.gz
+*.gz
+*.rar
+*.7z
+
+# CREDENTIALS / SECRETS
+.env
+.env.*
+*.key
+*.pem
+*.crt
+*.secret
+*.credentials
+config/secrets.*
+credentials.json
+
+# PYTHON
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.ipynb_checkpoints/
+
+# VIRTUAL ENVIRONMENTS
+venv/
+.env/
+env/
+.venv/
+
+# IDE FILES
+.vscode/
+.idea/
+
+# SYSTEM FILES
+.DS_Store
+Thumbs.db
