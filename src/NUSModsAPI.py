@@ -1,6 +1,11 @@
 import requests
 import json
 from pathlib import Path
+from dotenv import load_dotenv
+import os
+load_dotenv()
+
+API_KEY = os.getenv("API_KEY")
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_OUTPUT_PATH = PROJECT_ROOT / "data" / "NUSModsInfo.json"
@@ -24,5 +29,4 @@ def fetch_data_from_api(url, params=None, output_path=DEFAULT_OUTPUT_PATH):
         print(f"Error fetching data: {e}")
 
 if __name__ == "__main__":
-    api_url = "https://api.nusmods.com/v2/2025-2026/moduleInfo.json"
-    fetch_data_from_api(api_url)
+    fetch_data_from_api(API_KEY)
