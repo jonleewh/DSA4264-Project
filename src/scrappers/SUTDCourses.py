@@ -12,6 +12,7 @@ OUT_PATH = PROJECT_ROOT / "data" / "sutdCourseList.json"
 CODE_RE = re.compile(r"^(?P<code>\d{2}\.\d{3}[A-Z]{0,2})\s+(?P<title>.+)$")
 TERM_RE = re.compile(r"Term\(s\)\s*(.+)")
 CREDITS_RE = re.compile(r"(\d+)\s*credits", re.IGNORECASE)
+AFFILIATION_RE = re.compile(r"\b(ASD|DAI|EPD|ESD|HASS|ISTD|SMT)\b") 
 
 COURSE_TYPES = {
     "Capstone",
@@ -46,7 +47,10 @@ def parse_courses(html: str):
 
         term = None
         credits = None
+        affiliations = [] 
+
         j = i + 1
+
         while j < len(lines):
             if CODE_RE.match(lines[j]):
                 break
@@ -58,6 +62,9 @@ def parse_courses(html: str):
             credits_match = CREDITS_RE.search(lines[j])
             if credits_match:
                 credits = int(credits_match.group(1))
+            
+            affil_matches = AFFILIATION_RE.findall(lines[j])
+            affiliations.extend(affil_matches)
 
             j += 1
 
@@ -68,6 +75,7 @@ def parse_courses(html: str):
                 "course_type": course_type,
                 "terms": term,
                 "credits": credits,
+                "affiliations": list(set(affiliations)),
             }
         )
         i = j

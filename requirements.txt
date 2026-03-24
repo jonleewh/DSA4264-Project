@@ -161,6 +161,7 @@ safetensors
 scikit-learn
 scipy
 segtok
+selenium
 Send2Trash
 sentence-transformers
 sentencepiece
