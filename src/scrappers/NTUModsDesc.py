@@ -6,7 +6,7 @@ from pathlib import Path
 import requests
 from bs4 import BeautifulSoup
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 INPUT_PATH = PROJECT_ROOT / "data" / "ntuCourseList.json"
 OUTPUT_PATH = PROJECT_ROOT / "data" / "ntuCourseInfo.json"
 DETAIL_URL_TEMPLATE = "https://www.ntumods.org/mods/{code}"

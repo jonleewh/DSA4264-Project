@@ -3,7 +3,7 @@ from pathlib import Path
 
 import requests
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 OUTPUT_PATH = PROJECT_ROOT / "data" / "ntuCourseList.json"
 BASE_URL = "https://backend.ntumods.org/courses/"
 

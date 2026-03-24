@@ -2,7 +2,7 @@ import requests
 import json
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 DEFAULT_OUTPUT_PATH = PROJECT_ROOT / "data" / "NUSModsInfo.json"
 
 def fetch_data_from_api(url, params=None, output_path=DEFAULT_OUTPUT_PATH):
