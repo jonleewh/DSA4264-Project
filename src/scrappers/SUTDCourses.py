@@ -6,7 +6,7 @@ import requests
 from bs4 import BeautifulSoup
 
 BASE_URL = "https://www.sutd.edu.sg/education/undergraduate/courses/"
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 OUT_PATH = PROJECT_ROOT / "data" / "sutdCourseList.json"
 
 CODE_RE = re.compile(r"^(?P<code>\d{2}\.\d{3}[A-Z]{0,2})\s+(?P<title>.+)$")
