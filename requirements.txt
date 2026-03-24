@@ -111,6 +111,7 @@ nltk
 notebook_shim
 numba
 numpy
+openpyxl
 overrides
 packaging
 pandas
