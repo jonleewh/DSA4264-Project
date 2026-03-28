@@ -2,6 +2,7 @@ import json
 import re
 from pathlib import Path
 from urllib.parse import urljoin
+from typing import Optional
 
 import requests
 from bs4 import BeautifulSoup
@@ -62,7 +63,7 @@ def crawl_course_urls(session: requests.Session, max_pages: int = 30):
     return by_code
 
 
-def extract_description(html: str) -> str | None:
+def extract_description(html: str) -> Optional[str]:
     soup = BeautifulSoup(html, "html.parser")
     h1 = soup.find("h1")
     if not h1:

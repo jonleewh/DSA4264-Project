@@ -2,6 +2,7 @@ import argparse
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+from typing import Optional
 
 import requests
 from bs4 import BeautifulSoup
@@ -77,7 +78,8 @@ def fetch_course_info(code: str):
     }
 
 
-def main(limit: int | None):
+
+def main(limit: Optional[int]):
     if not INPUT_PATH.exists():
         raise FileNotFoundError(f"Missing input file: {INPUT_PATH}. Run src/NTUMods.py first.")
 
