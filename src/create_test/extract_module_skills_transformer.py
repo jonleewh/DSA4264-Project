@@ -6,7 +6,7 @@ from pathlib import Path
 import torch
 from sentence_transformers import SentenceTransformer, util
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_MODULE_INPUT = PROJECT_ROOT / "data" / "test" / "module_descriptions_test.jsonl"
 DEFAULT_JOBS_DIR = PROJECT_ROOT / "data" / "data"
 DEFAULT_OUTPUT = PROJECT_ROOT / "data" / "test" / "module_descriptions_test_with_skills.jsonl"

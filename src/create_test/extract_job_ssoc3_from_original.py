@@ -5,7 +5,7 @@ from pathlib import Path
 
 from openpyxl import load_workbook
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_JOBS_DIR = PROJECT_ROOT / "data" / "data"
 DEFAULT_SSOC_XLSX = PROJECT_ROOT / "data" / "ssoc2024-detailed-definitions.xlsx"
 DEFAULT_OUTPUT_JSONL = PROJECT_ROOT / "data" / "test" / "job_ssoc345_with_skills_from_original.jsonl"

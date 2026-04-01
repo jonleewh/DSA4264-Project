@@ -7,7 +7,7 @@ import torch
 from keybert import KeyBERT
 from sentence_transformers import SentenceTransformer
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_JOB_INPUT = PROJECT_ROOT / "data" / "test" / "job_descriptions_test.jsonl"
 DEFAULT_JOBS_DIR = PROJECT_ROOT / "data" / "data"
 DEFAULT_OUTPUT = PROJECT_ROOT / "data" / "test" / "job_descriptions_test_with_skills_keybert.jsonl"
