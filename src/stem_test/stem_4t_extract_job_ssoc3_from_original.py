@@ -1,16 +1,20 @@
 import argparse
 import json
+import pickle
 import re
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 from openpyxl import load_workbook
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_CLEANED_JOBS_PKL = PROJECT_ROOT / "data" / "cleaned_data" / "jobs_cleaned.pkl"
+DEFAULT_CLEANED_JOBS_INPUT = (
+    PROJECT_ROOT / "data" / "cleaned_data" / "jobs_cleaned_portable.jsonl"
+)
 DEFAULT_SSOC_XLSX = PROJECT_ROOT / "data" / "ssoc2020.xlsx"
-DEFAULT_OUTPUT_JSONL = PROJECT_ROOT / "data" / "test" / "job_ssoc345_with_skills_from_original.jsonl"
-DEFAULT_OUTPUT_JSON = PROJECT_ROOT / "data" / "test" / "job_ssoc345_with_skills_from_original.json"
+DEFAULT_OUTPUT_JSONL = PROJECT_ROOT / "data" / "test" / "job_ssoc345_with_skills_from_original_STEM.jsonl"
+DEFAULT_OUTPUT_JSON = PROJECT_ROOT / "data" / "test" / "job_ssoc345_with_skills_from_original_STEM.json"
 
 
 def normalize_text(value) -> str:
@@ -64,11 +68,70 @@ def extract_skill_names(row: dict) -> list[str]:
     return names
 
 
+class _NumpyCompatUnpickler(pickle.Unpickler):
+    """Allow loading pickles created under a different NumPy internal module path."""
+
+    MODULE_MAP = {
+        "numpy._core": "numpy.core",
+        "numpy._core.numeric": "numpy.core.numeric",
+        "numpy._core.multiarray": "numpy.core.multiarray",
+    }
+
+    def find_class(self, module: str, name: str) -> Any:
+        module = self.MODULE_MAP.get(module, module)
+        return super().find_class(module, name)
+
+
+def _to_row_records(payload: Any, input_path: Path) -> list[dict]:
+    if isinstance(payload, pd.DataFrame):
+        return payload.to_dict("records")
+    if isinstance(payload, list):
+        return payload
+    raise ValueError(
+        f"Unsupported payload type loaded from {input_path}: {type(payload).__name__}. "
+        "Expected pandas DataFrame or list[dict]."
+    )
+
+
+def _load_pickle_rows(input_path: Path) -> list[dict]:
+    try:
+        return _to_row_records(pd.read_pickle(input_path), input_path)
+    except ModuleNotFoundError as exc:
+        if "numpy._core" not in str(exc):
+            raise
+        with input_path.open("rb") as f:
+            payload = _NumpyCompatUnpickler(f).load()
+        return _to_row_records(payload, input_path)
+
+
+def _try_fallback_jsonl_from_pickle(input_path: Path) -> list[dict] | None:
+    jsonl_path = input_path.with_suffix(".jsonl")
+    if jsonl_path.exists():
+        print(
+            "Falling back to JSONL input due to pickle compatibility issue: "
+            f"{jsonl_path}",
+            flush=True,
+        )
+        try:
+            return load_cleaned_rows(jsonl_path)
+        except Exception:
+            return None
+    return None
+
+
 def load_cleaned_rows(input_path: Path) -> list[dict]:
     suffix = input_path.suffix.lower()
     if suffix == ".pkl":
-        df = pd.read_pickle(input_path)
-        return df.to_dict("records")
+        try:
+            return _load_pickle_rows(input_path)
+        except (ModuleNotFoundError, NotImplementedError, ValueError) as exc:
+            fallback_rows = _try_fallback_jsonl_from_pickle(input_path)
+            if fallback_rows is not None:
+                return fallback_rows
+            raise RuntimeError(
+                "Failed to load pickle input and no sibling .jsonl fallback was found. "
+                f"Input: {input_path}"
+            ) from exc
     if suffix == ".json":
         payload = json.loads(input_path.read_text(encoding="utf-8"))
         if not isinstance(payload, list):
@@ -76,9 +139,35 @@ def load_cleaned_rows(input_path: Path) -> list[dict]:
                 f"Expected a JSON array in {input_path}, got {type(payload).__name__}."
             )
         return payload
+    if suffix == ".jsonl":
+        with input_path.open("rb") as f:
+            header = f.read(2)
+        if header and header[:1] == b"\x80":
+            raise ValueError(
+                f"{input_path} has .jsonl extension but appears to be a pickle binary."
+            )
+        rows = []
+        with input_path.open("r", encoding="utf-8") as f:
+            for line_no, line in enumerate(f, start=1):
+                raw = line.strip()
+                if not raw:
+                    continue
+                try:
+                    row = json.loads(raw)
+                except json.JSONDecodeError as exc:
+                    raise ValueError(
+                        f"Invalid JSONL record at {input_path}:{line_no}: {exc.msg}"
+                    ) from exc
+                if not isinstance(row, dict):
+                    raise ValueError(
+                        f"Expected JSON object per JSONL line at {input_path}:{line_no}, "
+                        f"got {type(row).__name__}."
+                    )
+                rows.append(row)
+        return rows
 
     raise ValueError(
-        f"Unsupported input format: {input_path}. Expected .pkl or .json."
+        f"Unsupported input format: {input_path}. Expected .pkl, .json, or .jsonl."
     )
 
 
@@ -89,7 +178,7 @@ def main():
             "then generate SSOC test datasets."
         )
     )
-    parser.add_argument("--cleaned-jobs", type=Path, default=DEFAULT_CLEANED_JOBS_PKL)
+    parser.add_argument("--cleaned-jobs", type=Path, default=DEFAULT_CLEANED_JOBS_INPUT)
     parser.add_argument("--ssoc-xlsx", type=Path, default=DEFAULT_SSOC_XLSX)
     parser.add_argument("--output-jsonl", type=Path, default=DEFAULT_OUTPUT_JSONL)
     parser.add_argument("--output-json", type=Path, default=DEFAULT_OUTPUT_JSON)

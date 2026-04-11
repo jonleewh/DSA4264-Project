@@ -8,7 +8,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "data" / "test"
 DEFAULT_PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
-DEFAULT_CLEANED_MODULE_INPUT = PROJECT_ROOT / "data" / "cleaned_module_rows.jsonl"
+DEFAULT_CLEANED_MODULE_INPUT = PROJECT_ROOT / "data" / "cleaned_module_rows_STEM.jsonl"
 
 
 def clean_html(text: str | None) -> str:
@@ -133,8 +133,8 @@ def main():
     module_test = module_rows[: args.module_size]
     job_test = job_rows[: args.job_size]
 
-    module_out = args.output_dir / "module_descriptions_test.json"
-    job_out = args.output_dir / "job_descriptions_test.json"
+    module_out = args.output_dir / "module_descriptions_test_STEM.json"
+    job_out = args.output_dir / "job_descriptions_test_STEM.json"
 
     write_json(module_out, module_test)
     write_json(job_out, job_test)
