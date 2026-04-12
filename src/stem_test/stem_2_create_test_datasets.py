@@ -4,14 +4,16 @@ import json
 import random
 import re
 from pathlib import Path
+from typing import Optional
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "data" / "test"
 DEFAULT_PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
-DEFAULT_CLEANED_MODULE_INPUT = PROJECT_ROOT / "data" / "cleaned_module_rows.jsonl"
+DEFAULT_CLEANED_MODULE_INPUT = PROJECT_ROOT / "data" / "cleaned_module_rows_STEM.jsonl"
+DEFAULT_PORTABLE_JOBS_INPUT = PROJECT_ROOT / "data" / "cleaned_data" / "jobs_cleaned_portable.jsonl"
 
 
-def clean_html(text: str | None) -> str:
+def clean_html(text: Optional[str]) -> str:
     if not text:
         return ""
     text = re.sub(r"<[^>]+>", " ", text)
@@ -78,6 +80,23 @@ def build_module_rows(min_description_length: int):
 
 def build_job_rows(min_description_length: int):
     rows = []
+    if DEFAULT_PORTABLE_JOBS_INPUT.exists():
+        for record in load_jsonl(DEFAULT_PORTABLE_JOBS_INPUT):
+            desc = clean_html(record.get("description"))
+            if len(desc) < min_description_length:
+                continue
+
+            job_id = record.get("id") or record.get("uuid")
+            rows.append(
+                {
+                    "id": job_id,
+                    "source": record.get("sourceCode"),
+                    "title": record.get("title"),
+                    "description": desc,
+                }
+            )
+        return rows
+
     jobs_dir = PROJECT_ROOT / "data" / "data"
     if not jobs_dir.exists():
         return rows
@@ -133,8 +152,8 @@ def main():
     module_test = module_rows[: args.module_size]
     job_test = job_rows[: args.job_size]
 
-    module_out = args.output_dir / "module_descriptions_test.json"
-    job_out = args.output_dir / "job_descriptions_test.json"
+    module_out = args.output_dir / "module_descriptions_test_STEM.json"
+    job_out = args.output_dir / "job_descriptions_test_STEM.json"
 
     write_json(module_out, module_test)
     write_json(job_out, job_test)
