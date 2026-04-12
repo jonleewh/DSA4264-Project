@@ -2,6 +2,7 @@ import argparse
 import json
 import re
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 
@@ -24,7 +25,7 @@ DEFAULT_STEM6_JOB_OUTPUT = (
 )
 
 
-def normalize_text(text: str | None) -> str:
+def normalize_text(text: Optional[str]) -> str:
     if not text:
         return ""
     text = str(text).strip().lower()

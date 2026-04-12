@@ -2,6 +2,7 @@ import argparse
 import json
 import re
 from pathlib import Path
+from typing import Optional
 
 from module_skill_rules import (
     CANONICAL_MODULE_SKILLS,
@@ -186,7 +187,7 @@ def normalize_phrase(text: str) -> str:
     return cleaned
 
 
-def infer_skill_type(skill: str, seed_type: str | None = None) -> str:
+def infer_skill_type(skill: str, seed_type: Optional[str] = None) -> str:
     if seed_type:
         return seed_type
     if skill in TOOL_SKILLS:

@@ -2,14 +2,18 @@ import argparse
 import json
 import math
 import re
+import warnings
 from collections import Counter, defaultdict
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 from keybert import KeyBERT
 from sentence_transformers import SentenceTransformer
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
+
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_INPUT = PROJECT_ROOT / "data" / "cleaned_module_rows_STEM.jsonl"
@@ -95,7 +99,7 @@ def titleize_skill(phrase: str) -> str:
     return " ".join(titled)
 
 
-def load_rows(path: Path, max_rows: int | None) -> list[dict]:
+def load_rows(path: Path, max_rows: Optional[int]) -> list[dict]:
     rows = []
     with path.open("r", encoding="utf-8") as f:
         for line in f:

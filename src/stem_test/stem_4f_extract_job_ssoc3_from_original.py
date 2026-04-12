@@ -3,7 +3,7 @@ import json
 import pickle
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional, Tuple
 
 import pandas as pd
 from openpyxl import load_workbook
@@ -40,7 +40,7 @@ def load_ssoc_title_lookup(xlsx_path: Path) -> dict[str, str]:
     return lookup
 
 
-def parse_ssoc_code(raw) -> tuple[str | None, str | None, str | None]:
+def parse_ssoc_code(raw) -> Tuple[Optional[str], Optional[str], Optional[str]]:
     text = normalize_text(raw)
     if not text:
         return None, None, None
@@ -105,7 +105,7 @@ def _load_pickle_rows(input_path: Path) -> list[dict]:
         return _to_row_records(payload, input_path)
 
 
-def _try_fallback_jsonl_from_pickle(input_path: Path) -> list[dict] | None:
+def _try_fallback_jsonl_from_pickle(input_path: Path) -> Optional[list[dict]]:
     jsonl_path = input_path.with_suffix(".jsonl")
     if jsonl_path.exists():
         print(

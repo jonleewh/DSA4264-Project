@@ -1,7 +1,9 @@
 import argparse
 import json
 import re
+import warnings
 from pathlib import Path
+from typing import Optional
 
 import torch
 from keybert import KeyBERT
@@ -16,6 +18,8 @@ from module_skill_rules import (
     PRACTICAL_ANCHORS,
     STRICT_CANONICAL_EVIDENCE,
 )
+
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 FULL_DIR = PROJECT_ROOT / "data" / "stem_full"
@@ -50,7 +54,7 @@ def is_skill_like(skill: str) -> bool:
     return not any(bad in s for bad in EDU_BLOCKLIST_SUBSTRINGS)
 
 
-def load_module_rows(path: Path, max_rows: int | None):
+def load_module_rows(path: Path, max_rows: Optional[int]):
     suffix = path.suffix.lower()
 
     if suffix == ".jsonl":
