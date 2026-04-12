@@ -16,7 +16,8 @@ else
 fi
 
 "$PYTHON_BIN" src/stem_test/stem_prepare_portable_inputs.py
-"$PYTHON_BIN" src/stem_test/stem_1_scope_classifier.py
+"$PYTHON_BIN" src/stem_test/stem_1a_generate_scope_classifications.py
+"$PYTHON_BIN" src/stem_test/stem_1b_scope_classifier.py
 "$PYTHON_BIN" src/stem_test/stem_2_create_test_datasets.py
 "$PYTHON_BIN" src/stem_test/stem_5_build_canonical_skill_framework.py
 if [[ "${RUN_RULE_REGEN:-0}" == "1" ]]; then
