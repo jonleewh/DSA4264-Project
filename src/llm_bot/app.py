@@ -18,11 +18,6 @@ except ImportError:  # pragma: no cover
 
 HOST = "127.0.0.1"
 PORT = 8000
-EXAMPLE_QUERIES = [
-    "Find entry-level data analyst jobs that use Python and SQL",
-    "Show me full-time marketing roles with customer service skills",
-    "What STEM modules fit data engineering jobs that pay above 3500",
-]
 
 BOT = LocalJobCourseBot()
 
@@ -32,11 +27,6 @@ def render_page(query: str = "", result: dict | None = None) -> str:
     result_html = ""
     if result:
         result_html = render_results(result)
-
-    examples = "".join(
-        f'<button type="button" class="example" onclick="fillQuery(\'{html.escape(example)}\')">{html.escape(example)}</button>'
-        for example in EXAMPLE_QUERIES
-    )
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -122,16 +112,6 @@ def render_page(query: str = "", result: dict | None = None) -> str:
       background: var(--accent);
       color: white;
       font-weight: 700;
-    }}
-    .example-row {{
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }}
-    .example {{
-      padding: 9px 14px;
-      background: var(--chip);
-      color: var(--ink);
     }}
     .summary {{
       font-size: 1.02rem;
@@ -222,19 +202,10 @@ def render_page(query: str = "", result: dict | None = None) -> str:
         <textarea id="query" name="query" placeholder="Example: Find entry-level data analyst jobs that use Python and SQL">{query}</textarea>
         <button class="primary" type="submit">Search Jobs And Recommend STEM Modules</button>
       </form>
-      <div class="example-row" style="margin-top: 14px;">
-        {examples}
-      </div>
     </section>
 
     {result_html}
   </main>
-  <script>
-    function fillQuery(value) {{
-      document.getElementById('query').value = value;
-      document.getElementById('query').focus();
-    }}
-  </script>
 </body>
 </html>"""
 
