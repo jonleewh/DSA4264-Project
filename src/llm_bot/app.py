@@ -267,6 +267,7 @@ def render_results(result: dict) -> str:
           <h2>Interpreted Query</h2>
           <p class="meta">Detected filters</p>
           {interpreted_skills}
+          <p class="meta">School filter: <code>{html.escape(str(interpreted.get('school_filter') or 'Any'))}</code></p>
           <p class="meta">Work type: <code>{html.escape(str(interpreted['work_type'] or 'Any'))}</code></p>
           <p class="meta">Salary min: <code>{html.escape(str(interpreted['salary_min'] or 'Any'))}</code></p>
           <p class="meta">Salary max: <code>{html.escape(str(interpreted['salary_max'] or 'Any'))}</code></p>
@@ -281,6 +282,7 @@ def render_results(result: dict) -> str:
           <h2>STEM Pipeline Status</h2>
           <p class="meta">{html.escape(stem_status['message'])}</p>
           <p class="meta">Canonical matched jobs: <code>{html.escape(str(stem_status.get('canonical_job_match_count', 0)))}</code></p>
+          <p class="meta">Active school filter: <code>{html.escape(str(stem_status.get('school_filter') or 'Any'))}</code></p>
           {missing_html}
         </div>
       </div>
@@ -320,11 +322,23 @@ def render_job(job: dict) -> str:
 
 def render_module(module: dict) -> str:
     matched = render_chip_list(module["matched_skills"], empty_text="No overlap")
+    query_skills = render_chip_list(
+        module.get("supported_query_skills", []),
+        empty_text="No direct query skill support",
+    )
+    title_terms = render_chip_list(
+        module.get("matched_title_terms", []),
+        empty_text="No title match to the requested role",
+    )
     missing = render_chip_list(module["missing_skills"], empty_text="No major missing skills")
     return f"""
     <article class="item">
       <strong>{html.escape(module['id'])} {html.escape(module['title'])}</strong>
-      <p class="meta">{html.escape(module['source'])} | Alignment score <code>{module['alignment_score']}</code> | Coverage <code>{module['coverage_top_k']}</code></p>
+      <p class="meta">{html.escape(module['source'])} | Recommendation score <code>{module.get('recommendation_score', module['alignment_score'])}</code> | Alignment score <code>{module['alignment_score']}</code> | Coverage <code>{module['coverage_top_k']}</code></p>
+      <p class="meta">Supports your query skill(s)</p>
+      {query_skills}
+      <p class="meta">Role terms matched in the module title</p>
+      {title_terms}
       <p class="meta">Matched employer skills</p>
       {matched}
       <p class="meta">Still missing from this module</p>

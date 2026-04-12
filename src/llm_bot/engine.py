@@ -19,6 +19,8 @@ STEM_JOB_CANONICAL_PATH = STEM_FULL_DIR / "job_skills_canonical_stem.jsonl"
 
 STOPWORDS = {
     "a",
+    "abilities",
+    "ability",
     "an",
     "and",
     "are",
@@ -44,20 +46,29 @@ STOPWORDS = {
     "me",
     "module",
     "modules",
+    "more",
     "most",
     "of",
     "on",
     "or",
+    "over",
     "part",
+    "pay",
+    "paying",
     "please",
     "relevant",
     "role",
     "roles",
+    "salary",
     "show",
+    "skill",
+    "skills",
     "that",
     "the",
+    "than",
     "time",
     "to",
+    "under",
     "use",
     "used",
     "uses",
@@ -66,6 +77,63 @@ STOPWORDS = {
     "what",
     "which",
     "with",
+}
+
+GENERIC_QUERY_SKILL_TOKENS = {
+    "analysis",
+    "application",
+    "applications",
+    "communication",
+    "data",
+    "design",
+    "development",
+    "engineering",
+    "finance",
+    "leadership",
+    "management",
+    "marketing",
+    "operations",
+    "practice",
+    "professional",
+    "programming",
+    "research",
+    "sales",
+    "science",
+    "software",
+    "strategies",
+    "support",
+    "systems",
+    "technology",
+}
+
+QUERY_SKILL_ALIASES = {
+    "sql": {
+        "database",
+        "database applications",
+        "database management",
+        "database systems",
+        "database technology",
+        "databases",
+        "distributed databases",
+        "relational database",
+        "relational databases",
+    },
+}
+
+SCHOOL_ALIASES = {
+    "NUS": {
+        "nus",
+        "national university of singapore",
+    },
+    "NTU": {
+        "ntu",
+        "nanyang technological university",
+        "nanyang technological university singapore",
+    },
+    "SUTD": {
+        "sutd",
+        "singapore university of technology and design",
+    },
 }
 
 EXPERIENCE_HINTS = {
@@ -102,7 +170,7 @@ def tokenize(value: object) -> list[str]:
     return [
         token
         for token in normalize_text(value).split()
-        if len(token) > 1 and token not in STOPWORDS
+        if len(token) > 1 and token not in STOPWORDS and not token.isdigit()
     ]
 
 
@@ -117,6 +185,23 @@ def parse_money(value: str) -> int | None:
         return int(float(cleaned) * multiplier)
     except ValueError:
         return None
+
+
+def strip_query_filters(value: str) -> str:
+    text = normalize_text(value)
+    patterns = [
+        r"\b(?:salary|pay)\s+(?:above|over|at least|min(?:imum)?|more than|below|under|up to|less than|max(?:imum)?)\s+[0-9]+(?:\.[0-9]+)?k?\b",
+        r"\b(?:above|over|at least|min(?:imum)?|more than|below|under|up to|less than|max(?:imum)?)\s+[0-9]+(?:\.[0-9]+)?k?\b",
+        r"\b(?:salary|pay)\s+[0-9]+(?:\.[0-9]+)?k?\b",
+        r"\b(?:full time|full-time|part time|part-time)\b",
+    ]
+    for pattern in patterns:
+        text = re.sub(pattern, " ", text)
+    for aliases in SCHOOL_ALIASES.values():
+        for alias in aliases:
+            text = re.sub(rf"\b{re.escape(alias)}\b", " ", text)
+    text = re.sub(r"\b(?:only|from)\b", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
 
 
 def safe_list(value: object) -> list[str]:
@@ -185,13 +270,33 @@ def alignment_score(coverage: float, wj: float, cos: float, gap: float) -> float
     return max(0.0, min(1.0, score))
 
 
+def soft_token_match(left: str, right: str) -> bool:
+    if left == right:
+        return True
+    if min(len(left), len(right)) < 5:
+        return False
+    return left[:6] == right[:6]
+
+
+def overlap_ratio(query_tokens: set[str], target_tokens: set[str]) -> float:
+    if not query_tokens or not target_tokens:
+        return 0.0
+    matched = 0
+    for token in query_tokens:
+        if any(soft_token_match(token, target) for target in target_tokens):
+            matched += 1
+    return matched / len(query_tokens)
+
+
 @dataclass
 class QueryIntent:
     raw_query: str
     normalized_query: str
+    core_query: str
     tokens: list[str]
     non_skill_tokens: list[str]
     skills: set[str]
+    school_filter: str | None
     work_type: str | None
     salary_min: int | None
     salary_max: int | None
@@ -249,6 +354,8 @@ class LocalJobCourseBot:
                     "id": str(row.get("id") or row.get("module_id") or "").strip(),
                     "source": str(row.get("source") or "").strip(),
                     "title": str(row.get("title") or "").strip(),
+                    "title_norm": normalize_text(row.get("title") or ""),
+                    "title_tokens": set(tokenize(row.get("title") or "")),
                     "canonical_skills": skills,
                     "skill_counter": Counter(skills),
                     "skill_weights": normalize_counter(Counter(skills)),
@@ -330,12 +437,22 @@ class LocalJobCourseBot:
 
     def interpret_query(self, query: str) -> QueryIntent:
         normalized = normalize_text(query)
-        tokens = tokenize(query)
-        skills = {
-            skill
-            for skill in self.skill_vocabulary
-            if skill and f" {skill} " in f" {normalized} "
-        }
+        core_query = strip_query_filters(query)
+        tokens = tokenize(core_query)
+        school_filter = None
+        for school, aliases in SCHOOL_ALIASES.items():
+            if any(f" {alias} " in f" {normalized} " for alias in aliases):
+                school_filter = school
+                break
+        skills = set()
+        for skill in self.skill_vocabulary:
+            normalized_skill = normalize_text(skill)
+            if not normalized_skill or f" {normalized_skill} " not in f" {core_query} ":
+                continue
+            skill_tokens = tokenize(normalized_skill)
+            if len(skill_tokens) == 1 and skill_tokens[0] in GENERIC_QUERY_SKILL_TOKENS:
+                continue
+            skills.add(normalized_skill)
         skill_tokens = {token for skill in skills for token in tokenize(skill)}
         non_skill_tokens = [token for token in tokens if token not in skill_tokens]
 
@@ -366,9 +483,11 @@ class LocalJobCourseBot:
         return QueryIntent(
             raw_query=query,
             normalized_query=normalized,
+            core_query=core_query,
             tokens=tokens,
             non_skill_tokens=non_skill_tokens,
             skills=skills,
+            school_filter=school_filter,
             work_type=work_type,
             salary_min=salary_min,
             salary_max=salary_max,
@@ -389,7 +508,7 @@ class LocalJobCourseBot:
         score += category_hits * 1.2
         score += skill_hits * 3.0
 
-        if intent.normalized_query and intent.normalized_query in job["title_norm"]:
+        if intent.core_query and intent.core_query in job["title_norm"]:
             score += 5.0
 
         if intent.work_type:
@@ -483,9 +602,19 @@ class LocalJobCourseBot:
                 counter[skill] += weight
         return counter, normalize_counter(counter), matched_post_ids
 
+    def _module_supports_query_skill(self, module: dict, skill: str) -> bool:
+        if skill in module["skill_counter"]:
+            return True
+        module_text = f"{module['title_norm']} {' '.join(module['canonical_skills'])}"
+        for alias in QUERY_SKILL_ALIASES.get(skill, set()):
+            if alias in module_text:
+                return True
+        return False
+
     def recommend_modules(
         self,
         ranked_jobs: list[dict],
+        intent: QueryIntent | None = None,
         limit: int = 5,
         top_k_job_skills: int = 10,
     ) -> tuple[list[dict], dict[str, Any]]:
@@ -510,7 +639,11 @@ class LocalJobCourseBot:
             }
 
         recommendations = []
+        role_tokens = set(intent.non_skill_tokens) if intent else set()
+        query_skills = sorted(intent.skills) if intent else []
         for module in self.stem_modules:
+            if intent and intent.school_filter and module["source"] != intent.school_filter:
+                continue
             module_counter = module["skill_counter"]
             module_weights = module["skill_weights"]
             coverage = topk_coverage(module_counter, job_counter, top_k_job_skills)
@@ -521,17 +654,41 @@ class LocalJobCourseBot:
             overlap = sorted(set(module_counter) & set(job_counter))
             if score <= 0 or not overlap:
                 continue
+            matched_title_terms = sorted(
+                token
+                for token in role_tokens
+                if any(soft_token_match(token, title_token) for title_token in module["title_tokens"])
+            )
+            supported_query_skills = [
+                skill for skill in query_skills if self._module_supports_query_skill(module, skill)
+            ]
+            query_skill_coverage = (
+                len(supported_query_skills) / len(query_skills) if query_skills else 0.0
+            )
+            title_overlap = overlap_ratio(role_tokens, module["title_tokens"])
+            title_phrase_bonus = 1.0 if role_tokens and title_overlap == 1.0 else 0.0
+            query_relevance = (
+                0.5 * query_skill_coverage + 0.35 * title_overlap + 0.15 * title_phrase_bonus
+            )
+            recommendation_score = 0.7 * score + 0.3 * query_relevance
+            if query_skills or role_tokens:
+                if query_relevance == 0.0 and coverage < 0.3:
+                    continue
             recommendations.append(
                 {
                     "id": module["id"],
                     "source": module["source"],
                     "title": module["title"],
                     "alignment_score": round(score, 4),
+                    "recommendation_score": round(recommendation_score, 4),
+                    "query_relevance_score": round(query_relevance, 4),
                     "coverage_top_k": round(coverage, 4),
                     "weighted_jaccard": round(wj, 4),
                     "cosine_similarity": round(cos, 4),
                     "gap_score": round(gap, 4),
                     "matched_skills": overlap[:6],
+                    "matched_title_terms": matched_title_terms,
+                    "supported_query_skills": supported_query_skills,
                     "missing_skills": [
                         skill for skill, _ in job_counter.most_common(top_k_job_skills) if skill not in module_counter
                     ][:5],
@@ -540,6 +697,7 @@ class LocalJobCourseBot:
 
         recommendations.sort(
             key=lambda row: (
+                row["recommendation_score"],
                 row["alignment_score"],
                 row["coverage_top_k"],
                 row["weighted_jaccard"],
@@ -548,10 +706,11 @@ class LocalJobCourseBot:
         )
         return recommendations[:limit], {
             "available": True,
-            "message": self.stem_data_status["message"],
-            "missing_paths": [],
-            "canonical_job_match_count": len(matched_post_ids),
-        }
+                "message": self.stem_data_status["message"],
+                "missing_paths": [],
+                "canonical_job_match_count": len(matched_post_ids),
+                "school_filter": intent.school_filter if intent else None,
+            }
 
     def _build_summary(
         self,
@@ -583,11 +742,29 @@ class LocalJobCourseBot:
 
         if top_modules:
             best_module = top_modules[0]
-            covered = ", ".join(best_module["matched_skills"][:4]) or "shared skills"
+            reasons = []
+            if best_module["supported_query_skills"]:
+                reasons.append(
+                    "it supports the requested skill(s) "
+                    + ", ".join(best_module["supported_query_skills"][:3])
+                )
+            if best_module["matched_title_terms"]:
+                reasons.append(
+                    "its title lines up with "
+                    + ", ".join(best_module["matched_title_terms"][:3])
+                )
+            if best_module["matched_skills"]:
+                reasons.append(
+                    "its canonical overlap includes "
+                    + ", ".join(best_module["matched_skills"][:4])
+                )
+            module_reason = "; ".join(reasons) if reasons else "it has the strongest canonical overlap"
             sentence += (
                 f" The top STEM module recommendation is {best_module['id']} {best_module['title']} "
-                f"because its canonical skill overlap includes {covered}."
+                f"because {module_reason}."
             )
+            if intent.school_filter:
+                sentence += f" I restricted module recommendations to {intent.school_filter}."
         elif not stem_status["available"]:
             sentence += f" {stem_status['message']}"
         return sentence
@@ -595,7 +772,11 @@ class LocalJobCourseBot:
     def run_query(self, query: str, top_job_limit: int = 5, top_module_limit: int = 5) -> dict:
         intent = self.interpret_query(query)
         top_jobs, all_ranked_jobs = self.search_jobs(intent, limit=top_job_limit)
-        top_modules, stem_status = self.recommend_modules(all_ranked_jobs, limit=top_module_limit)
+        top_modules, stem_status = self.recommend_modules(
+            all_ranked_jobs,
+            intent=intent,
+            limit=top_module_limit,
+        )
         top_skill_profile = self._build_skill_profile(all_ranked_jobs, top_k_jobs=8, top_k_skills=10)
 
         return {
@@ -603,6 +784,7 @@ class LocalJobCourseBot:
             "interpreted_query": {
                 "tokens": intent.tokens,
                 "skills": sorted(intent.skills),
+                "school_filter": intent.school_filter,
                 "work_type": intent.work_type,
                 "salary_min": intent.salary_min,
                 "salary_max": intent.salary_max,
