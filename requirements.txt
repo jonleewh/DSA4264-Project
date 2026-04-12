@@ -1,4 +1,6 @@
 beautifulsoup4==4.12.3
+ipywidgets==8.1.7
+jupyterlab==4.4.7
 keybert==0.8.5
 matplotlib==3.9.2
 mkdocs==1.6.1

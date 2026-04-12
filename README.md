@@ -22,37 +22,56 @@ Include the repository tree here
     - 
 
 3. **Create a virtual environment** (use Python 3.11 or higher)
-    
-    Windows:
-    ```{}
-    md penv
-    cd penv
-    python -m venv .
-    .\penv\Scripts\activate  # To activate the virtual environment
-    deactivate  # To deactivate the environment
+
+    Run these commands from the **repository root**. We recommend creating the environment as `.venv/`.
+
+    Windows (PowerShell):
+    ```powershell
+    py -3.11 -m venv .venv
+    .\.venv\Scripts\Activate.ps1
+    deactivate
     ```
 
-    Mac:
-    ```{}
-    mkdir penv
-    cd penv
-    python3.12 -m venv .
-    ./penv/source bin/activate  # To activate the virtual environment
-    deactivate  # To deactivate the environment
+    Windows (Command Prompt):
+    ```bat
+    py -3.11 -m venv .venv
+    .\.venv\Scripts\activate
+    deactivate
     ```
+
+    macOS / Linux:
+    ```bash
+    python3 -m venv .venv
+    source .venv/bin/activate
+    deactivate
+    ```
+
+    If `py` is unavailable on Windows, use `python -m venv .venv` instead. If `python3` points to Python older than 3.11, use the exact interpreter name installed on your machine, such as `python3.11`.
 
 4. **Install dependencies**
 
     To install the required dependencies, run:
-    ```{}
-    pip install -r requirements.txt
+    ```bash
+    python -m pip install --upgrade pip
+    python -m pip install -r requirements.txt
     ```
 
-5. **Set up pre-commit hooks**
+    This also installs the Jupyter dependencies used by the notebooks.
+
+5. **Start Jupyter for the notebooks**
+
+    Run Jupyter from the **repository root** so the notebooks can find the project files:
+    ```bash
+    python -m jupyter lab
+    ```
+
+    Then open the notebooks in `src/notebooks/`.
+
+6. **Set up pre-commit hooks**
 
 
 
-6. **Run the data pipelines**
+7. **Run the data pipelines**
 
 
 

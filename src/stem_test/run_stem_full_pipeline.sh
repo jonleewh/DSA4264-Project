@@ -4,14 +4,18 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
-if [[ -x "$ROOT_DIR/venv/bin/python" ]]; then
+if [[ -x "$ROOT_DIR/.venv/bin/python" ]]; then
+  PYTHON_BIN="$ROOT_DIR/.venv/bin/python"
+elif [[ -x "$ROOT_DIR/venv/bin/python" ]]; then
   PYTHON_BIN="$ROOT_DIR/venv/bin/python"
+elif [[ -x "$ROOT_DIR/penv/bin/python" ]]; then
+  PYTHON_BIN="$ROOT_DIR/penv/bin/python"
 elif command -v python3 >/dev/null 2>&1; then
   PYTHON_BIN="$(command -v python3)"
 elif command -v python >/dev/null 2>&1; then
   PYTHON_BIN="$(command -v python)"
 else
-  echo "No Python interpreter found. Expected venv/bin/python, python3, or python." >&2
+  echo "No Python interpreter found. Expected .venv/bin/python, venv/bin/python, penv/bin/python, python3, or python." >&2
   exit 127
 fi
 
