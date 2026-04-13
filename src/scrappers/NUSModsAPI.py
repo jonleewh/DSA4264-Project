@@ -28,5 +28,5 @@ def fetch_data_from_api(url, params=None, output_path=DEFAULT_OUTPUT_PATH):
         print(f"Error fetching data: {e}")
 
 if __name__ == "__main__":
-    api_url = os.getenv("nus_api")
+    api_url = "https://api.nusmods.com/v2/2025-2026/moduleInfo.json"
     fetch_data_from_api(api_url)
