@@ -4,12 +4,18 @@ import json
 import random
 import re
 from pathlib import Path
+from typing import Optional
+
+import pandas as pd
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "data" / "test"
+DEFAULT_PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
+DEFAULT_CLEANED_MODULE_INPUT = PROJECT_ROOT / "data" / "cleaned_data" / "cleaned_module_rows_STEM.jsonl"
+DEFAULT_JOBS_INPUT = PROJECT_ROOT / "data" / "cleaned_data" / "jobs_cleaned.pkl"
 
 
-def clean_html(text: str | None) -> str:
+def clean_html(text: Optional[str]) -> str:
     if not text:
         return ""
     text = re.sub(r"<[^>]+>", " ", text)
@@ -22,59 +28,55 @@ def load_json(path: Path):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def build_module_rows(min_description_length: int):
+def load_jsonl(path: Path):
     rows = []
+    with path.open("r", encoding="utf-8") as f:
+        for line in f:
+            rows.append(json.loads(line))
+    return rows
 
-    nus_path = PROJECT_ROOT / "data" / "NUSModsInfo.json"
-    if nus_path.exists():
-        for record in load_json(nus_path):
-            desc = (record.get("description") or "").strip()
-            if len(desc) < min_description_length:
-                continue
-            rows.append(
-                {
-                    "id": f"NUS::{record.get('moduleCode')}",
-                    "source": "NUS",
-                    "title": record.get("title"),
-                    "description": desc,
-                }
-            )
 
-    ntu_path = PROJECT_ROOT / "data" / "ntuCourseInfo.json"
-    if ntu_path.exists():
-        for record in load_json(ntu_path):
-            desc = (record.get("description") or "").strip()
-            if len(desc) < min_description_length:
-                continue
-            rows.append(
-                {
-                    "id": f"NTU::{record.get('code')}",
-                    "source": "NTU",
-                    "title": record.get("title"),
-                    "description": desc,
-                }
-            )
+def build_module_rows(min_description_length: int):
+    if not DEFAULT_CLEANED_MODULE_INPUT.exists():
+        raise FileNotFoundError(
+            "STEM module rows not found. Run "
+            "src/stem_test/stem_1_scope_classifier.py first to create "
+            f"{DEFAULT_CLEANED_MODULE_INPUT}."
+        )
 
-    sutd_path = PROJECT_ROOT / "data" / "sutdCourseDescriptions.json"
-    if sutd_path.exists():
-        for record in load_json(sutd_path):
-            desc = (record.get("description") or "").strip()
-            if len(desc) < min_description_length:
-                continue
-            rows.append(
-                {
-                    "id": f"SUTD::{record.get('code')}",
-                    "source": "SUTD",
-                    "title": record.get("title"),
-                    "description": desc,
-                }
-            )
-
+    rows = []
+    for record in load_jsonl(DEFAULT_CLEANED_MODULE_INPUT):
+        desc = (record.get("description") or "").strip()
+        if len(desc) < min_description_length:
+            continue
+        rows.append(record)
+    print(f"Loaded STEM module rows from: {DEFAULT_CLEANED_MODULE_INPUT}")
     return rows
 
 
 def build_job_rows(min_description_length: int):
     rows = []
+    if DEFAULT_JOBS_INPUT.exists():
+        df = pd.read_pickle(DEFAULT_JOBS_INPUT)
+        for record in df.to_dict("records"):
+            desc = clean_html(record.get("description"))
+            if len(desc) < min_description_length:
+                continue
+
+            job_id = record.get("uuid")
+            if not job_id:
+                continue
+
+            rows.append(
+                {
+                    "id": job_id,
+                    "source": record.get("source") or "MCF",
+                    "title": record.get("title"),
+                    "description": desc,
+                }
+            )
+        return rows
+
     jobs_dir = PROJECT_ROOT / "data" / "data"
     if not jobs_dir.exists():
         return rows
@@ -100,11 +102,12 @@ def build_job_rows(min_description_length: int):
     return rows
 
 
-def write_jsonl(path: Path, rows):
+def write_json(path: Path, rows):
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as f:
-        for row in rows:
-            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+    path.write_text(
+        json.dumps(rows, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
 
 
 def main():
@@ -129,11 +132,11 @@ def main():
     module_test = module_rows[: args.module_size]
     job_test = job_rows[: args.job_size]
 
-    module_out = args.output_dir / "module_descriptions_test.jsonl"
-    job_out = args.output_dir / "job_descriptions_test.jsonl"
+    module_out = args.output_dir / "module_descriptions_test_STEM.json"
+    job_out = args.output_dir / "job_descriptions_test_STEM.json"
 
-    write_jsonl(module_out, module_test)
-    write_jsonl(job_out, job_test)
+    write_json(module_out, module_test)
+    write_json(job_out, job_test)
 
     print(f"Saved module test set: {len(module_test)} -> {module_out}")
     print(f"Saved job test set: {len(job_test)} -> {job_out}")

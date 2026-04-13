@@ -5,9 +5,9 @@ from pathlib import Path
 
 from openpyxl import load_workbook
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_JOBS_DIR = PROJECT_ROOT / "data" / "data"
-DEFAULT_SSOC_XLSX = PROJECT_ROOT / "data" / "ssoc2024-detailed-definitions.xlsx"
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_TEST_JOBS_INPUT = PROJECT_ROOT / "data" / "test" / "job_descriptions_test.jsonl"
+DEFAULT_SSOC_XLSX = PROJECT_ROOT / "data" / "ssoc2020.xlsx"
 DEFAULT_OUTPUT_JSONL = PROJECT_ROOT / "data" / "test" / "job_ssoc345_with_skills_from_original.jsonl"
 DEFAULT_OUTPUT_JSON = PROJECT_ROOT / "data" / "test" / "job_ssoc345_with_skills_from_original.json"
 
@@ -47,38 +47,60 @@ def parse_ssoc_code(raw) -> tuple[str | None, str | None, str | None]:
     return ssoc5, ssoc4, ssoc3
 
 
-def extract_skill_names(skills_raw) -> list[str]:
-    if not isinstance(skills_raw, list):
-        return []
+def extract_skill_names(row: dict) -> list[str]:
     names = []
     seen = set()
-    for item in skills_raw:
-        if isinstance(item, dict):
-            skill = normalize_text(item.get("skill"))
-        else:
+    for key in ("skills", "all_relevant_skills", "hard_skills", "soft_skills"):
+        for item in row.get(key) or []:
             skill = normalize_text(item)
-        if not skill:
-            continue
-        key = skill.lower()
-        if key in seen:
-            continue
-        seen.add(key)
-        names.append(skill)
+            if not skill:
+                continue
+            skill_key = skill.lower()
+            if skill_key in seen:
+                continue
+            seen.add(skill_key)
+            names.append(skill)
     return names
+
+
+def load_cleaned_rows(input_path: Path) -> list[dict]:
+    suffix = input_path.suffix.lower()
+    if suffix == ".jsonl":
+        rows = []
+        with input_path.open("r", encoding="utf-8") as handle:
+            for line in handle:
+                line = line.strip()
+                if line:
+                    rows.append(json.loads(line))
+        return rows
+    if suffix == ".json":
+        payload = json.loads(input_path.read_text(encoding="utf-8"))
+        if not isinstance(payload, list):
+            raise ValueError(
+                f"Expected a JSON array in {input_path}, got {type(payload).__name__}."
+            )
+        return payload
+
+    raise ValueError(
+        f"Unsupported input format: {input_path}. Expected .jsonl or .json."
+    )
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Extract 3-digit SSOC from original job JSON files and map to SSOC 2024 Excel."
+        description=(
+            "Extract SSOC hierarchy from downstream job test rows and map to SSOC 2020 Excel."
+        )
     )
-    parser.add_argument("--jobs-dir", type=Path, default=DEFAULT_JOBS_DIR)
+    parser.add_argument("--jobs-input", type=Path, default=DEFAULT_TEST_JOBS_INPUT)
     parser.add_argument("--ssoc-xlsx", type=Path, default=DEFAULT_SSOC_XLSX)
     parser.add_argument("--output-jsonl", type=Path, default=DEFAULT_OUTPUT_JSONL)
     parser.add_argument("--output-json", type=Path, default=DEFAULT_OUTPUT_JSON)
+    parser.add_argument("--include-non-fresh", action="store_true")
     args = parser.parse_args()
 
-    if not args.jobs_dir.exists():
-        raise FileNotFoundError(f"Jobs directory not found: {args.jobs_dir}")
+    if not args.jobs_input.exists():
+        raise FileNotFoundError(f"Job test input not found: {args.jobs_input}")
     if not args.ssoc_xlsx.exists():
         raise FileNotFoundError(f"SSOC Excel not found: {args.ssoc_xlsx}")
 
@@ -86,18 +108,22 @@ def main():
     if not ssoc_title_lookup:
         raise RuntimeError("No SSOC 3/4/5-digit rows found in the Excel file.")
 
-    mapped_rows = []
+    cleaned_rows = load_cleaned_rows(args.jobs_input)
+
+    fresh_only = not args.include_non_fresh
+    mapped_rows: list[dict] = []
     skipped_no_ssoc = 0
     skipped_no_match = 0
+    skipped_non_fresh = 0
 
-    files = sorted(args.jobs_dir.glob("*.json"))
-    for i, path in enumerate(files, start=1):
-        try:
-            row = json.loads(path.read_text(encoding="utf-8"))
-        except Exception:
+    total = len(cleaned_rows)
+    for i, row in enumerate(cleaned_rows, start=1):
+        has_fresh_flag = "is_freshgrad" in row
+        if fresh_only and has_fresh_flag and not row.get("is_freshgrad"):
+            skipped_non_fresh += 1
             continue
 
-        ssoc5, ssoc4, ssoc3 = parse_ssoc_code(row.get("ssocCode"))
+        ssoc5, ssoc4, ssoc3 = parse_ssoc_code(row.get("ssoc_code") or row.get("ssocCode"))
         if not ssoc5:
             skipped_no_ssoc += 1
             continue
@@ -109,35 +135,36 @@ def main():
             skipped_no_match += 1
             continue
 
-        metadata = row.get("metadata") or {}
         mapped_rows.append(
             {
-                "job_post_id": metadata.get("jobPostId") or path.stem,
+                "job_post_id": row.get("id") or row.get("uuid"),
                 "ssoc_5d_code": ssoc5,
                 "ssoc_5d_title": title5,
                 "ssoc_4d_code": ssoc4,
                 "ssoc_4d_title": title4,
                 "ssoc_3d_code": ssoc3,
                 "ssoc_3d_title": title3,
-                "skills": extract_skill_names(row.get("skills")),
+                "skills": extract_skill_names(row),
             }
         )
 
-        if i % 5000 == 0 or i == len(files):
-            print(f"Scanned {i}/{len(files)} files...", flush=True)
+        if i % 5000 == 0 or i == total:
+            print(f"Scanned {i}/{total} rows...", flush=True)
 
     args.output_jsonl.parent.mkdir(parents=True, exist_ok=True)
     with args.output_jsonl.open("w", encoding="utf-8") as f:
-        for row in mapped_rows:
-            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+        for mapped_row in mapped_rows:
+            f.write(json.dumps(mapped_row, ensure_ascii=False) + "\n")
 
     args.output_json.parent.mkdir(parents=True, exist_ok=True)
     args.output_json.write_text(
         json.dumps(mapped_rows, ensure_ascii=False, indent=2), encoding="utf-8"
     )
 
-    print(f"Total files scanned: {len(files)}")
+    print(f"Total rows scanned: {total}")
     print(f"Mapped rows: {len(mapped_rows)}")
+    if fresh_only and any("is_freshgrad" in row for row in cleaned_rows):
+        print(f"Skipped (non-fresh rows): {skipped_non_fresh}")
     print(f"Skipped (missing ssocCode): {skipped_no_ssoc}")
     print(f"Skipped (3-digit hierarchy not in SSOC file): {skipped_no_match}")
     print(f"Saved JSONL: {args.output_jsonl}")

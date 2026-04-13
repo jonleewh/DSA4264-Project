@@ -1,5 +1,6 @@
 import argparse
 import json
+import random
 import re
 from pathlib import Path
 
@@ -7,11 +8,12 @@ import torch
 from keybert import KeyBERT
 from sentence_transformers import SentenceTransformer
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_JOB_INPUT = PROJECT_ROOT / "data" / "test" / "job_descriptions_test.jsonl"
-DEFAULT_JOBS_DIR = PROJECT_ROOT / "data" / "data"
-DEFAULT_OUTPUT = PROJECT_ROOT / "data" / "test" / "job_descriptions_test_with_skills_keybert.jsonl"
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_CLEANED_JOBS_INPUT = PROJECT_ROOT / "data" / "processed" / "job_freshgrad_cleaned.json"
+DEFAULT_TEST_OUTPUT = PROJECT_ROOT / "data" / "test" / "job_descriptions_test.json"
+DEFAULT_OUTPUT = PROJECT_ROOT / "data" / "test" / "job_descriptions_test_with_skills_keybert.json"
 DEFAULT_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+REQUIRED_CLEANED_FIELDS = ("id", "source", "title")
 
 BLOCKLIST_SUBSTRINGS = [
     "course",
@@ -44,30 +46,56 @@ def is_valid_skill(skill: str) -> bool:
     return not any(bad in s for bad in BLOCKLIST_SUBSTRINGS)
 
 
-def load_jsonl(path: Path):
-    rows = []
-    with path.open("r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if line:
-                rows.append(json.loads(line))
+def load_cleaned_rows(path: Path):
+    rows = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(rows, list):
+        raise ValueError(f"Expected a JSON array in {path}, got {type(rows).__name__}.")
+    for i, row in enumerate(rows, start=1):
+        missing = [k for k in REQUIRED_CLEANED_FIELDS if k not in row]
+        if missing:
+            raise ValueError(
+                f"Invalid cleaned dataset row {i} in {path}. Missing fields: {missing}."
+            )
     return rows
 
 
-def load_skill_vocab(jobs_dir: Path):
-    vocab = set()
-    for path in jobs_dir.glob("*.json"):
-        try:
-            row = json.loads(path.read_text(encoding="utf-8"))
-        except Exception:
+def build_test_rows(
+    cleaned_rows: list[dict],
+    test_size: int,
+    min_description_length: int,
+    seed: int,
+    fresh_only: bool,
+):
+    candidates = []
+    for row in cleaned_rows:
+        if fresh_only and not row.get("is_freshgrad"):
             continue
-        for item in row.get("skills") or []:
-            if isinstance(item, dict):
-                skill = normalize_text(item.get("skill"))
-            else:
+        description = normalize_text(row.get("description_clean") or row.get("description") or "")
+        if len(description) < min_description_length:
+            continue
+        candidates.append(
+            {
+                "id": row.get("id"),
+                "source": row.get("source"),
+                "title": row.get("title"),
+                "description": description,
+            }
+        )
+    random.Random(seed).shuffle(candidates)
+    return candidates[: min(test_size, len(candidates))]
+
+
+def load_skill_vocab(cleaned_rows: list[dict], fresh_only: bool):
+    vocab = set()
+    for row in cleaned_rows:
+        if fresh_only and not row.get("is_freshgrad"):
+            continue
+
+        for key in ("all_relevant_skills", "hard_skills", "soft_skills"):
+            for item in row.get(key) or []:
                 skill = normalize_text(str(item))
-            if is_valid_skill(skill):
-                vocab.add(skill)
+                if is_valid_skill(skill):
+                    vocab.add(skill)
     return sorted(vocab)
 
 
@@ -140,26 +168,41 @@ def extract_skills_for_job(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Extract industry-relevant skills from job descriptions using KeyBERT."
+        description=(
+            "Generate fresh-grad job test dataset from cleaned jobs and extract skills with KeyBERT."
+        )
     )
-    parser.add_argument("--job-input", type=Path, default=DEFAULT_JOB_INPUT)
-    parser.add_argument("--jobs-dir", type=Path, default=DEFAULT_JOBS_DIR)
+    parser.add_argument("--cleaned-jobs-input", type=Path, default=DEFAULT_CLEANED_JOBS_INPUT)
+    parser.add_argument("--test-output", type=Path, default=DEFAULT_TEST_OUTPUT)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--model", type=str, default=DEFAULT_MODEL)
+    parser.add_argument("--test-size", type=int, default=1000)
+    parser.add_argument("--min-description-length", type=int, default=80)
+    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--include-non-fresh", action="store_true")
     parser.add_argument("--top-k", type=int, default=10)
     parser.add_argument("--map-min-score", type=float, default=0.46)
     parser.add_argument("--desc-min-score", type=float, default=0.36)
     args = parser.parse_args()
 
-    if not args.job_input.exists():
-        raise FileNotFoundError(f"Input file not found: {args.job_input}")
-    if not args.jobs_dir.exists():
-        raise FileNotFoundError(f"Jobs dir not found: {args.jobs_dir}")
+    if not args.cleaned_jobs_input.exists():
+        raise FileNotFoundError(f"Cleaned input file not found: {args.cleaned_jobs_input}")
 
-    job_rows = load_jsonl(args.job_input)
-    skill_vocab = load_skill_vocab(args.jobs_dir)
+    fresh_only = not args.include_non_fresh
+    cleaned_rows = load_cleaned_rows(args.cleaned_jobs_input)
+    job_rows = build_test_rows(
+        cleaned_rows=cleaned_rows,
+        test_size=args.test_size,
+        min_description_length=args.min_description_length,
+        seed=args.seed,
+        fresh_only=fresh_only,
+    )
+    if not job_rows:
+        raise RuntimeError("No candidate rows available to build job test dataset.")
+
+    skill_vocab = load_skill_vocab(cleaned_rows, fresh_only=fresh_only)
     if not skill_vocab:
-        raise RuntimeError("No skill vocabulary found from original job files.")
+        raise RuntimeError("No skill vocabulary found in cleaned job file.")
 
     st_model = SentenceTransformer(args.model, local_files_only=True)
     kw_model = KeyBERT(model=st_model)
@@ -183,11 +226,20 @@ def main():
         if i % 100 == 0 or i == total:
             print(f"Processed {i}/{total} rows...", flush=True)
 
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    with args.output.open("w", encoding="utf-8") as f:
-        for row in output_rows:
-            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+    args.test_output.parent.mkdir(parents=True, exist_ok=True)
+    args.test_output.write_text(
+        json.dumps(job_rows, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
 
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(
+        json.dumps(output_rows, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+    print(f"Generated job test rows: {len(job_rows)}")
+    print(f"Saved base test set to: {args.test_output}")
     print(f"Skill vocabulary size: {len(skill_vocab)}")
     print(f"Saved output to: {args.output}")
 
