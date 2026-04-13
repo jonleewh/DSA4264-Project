@@ -11,9 +11,34 @@ This notebook therefore acts as a governance layer between raw postings and high
 ## 2. Scope
 
 ### 2.1 Problem
- 
+
+- State the full project question explicitly:
+  - how well do Singapore university courses prepare students for real-world jobs?
+- Define the comparison unit:
+  - university modules and their extracted skill signals
+  - fresh-graduate-relevant job postings and their extracted skill demand
+- Clarify why this matters in a public-sector context:
+  - curriculum review
+  - graduate employability
+  - workforce planning
+  - evidence-based policy decisions on higher education and manpower alignment
+
 ### 2.2 Success Criteria
- 
+
+- Define what successful project delivery looks like:
+  - cleaned and analysis-ready job dataset
+  - cleaned and analysis-ready university course dataset
+  - reproducible downstream pipelines for alignment analysis
+  - interpretable outputs for technical and policy stakeholders
+- Add technical success criteria:
+  - robust preprocessing from noisy raw data
+  - stable canonical skill mapping
+  - reproducible baseline and STEM workflows
+  - clear experimental comparison path
+- Add analytical success criteria:
+  - ability to compare course-side and job-side skills at scale
+  - ability to identify strong alignment and likely skill gaps
+  - ability to produce findings useful for curriculum discussion
 
 ### 2.3 Assumptions
 
@@ -27,7 +52,58 @@ The `data_cleaning_jobs_merged.ipynb` notebook makes several important assumptio
 
 These assumptions are defensible for a labour-market alignment study, but they also define the limits of interpretation. The resulting dataset is best understood as a curated view of entry-level demand rather than a complete representation of all possible graduate transitions.
 
-## 3. Methodology
+### 2.4 Stakeholders
+
+- Identify the main stakeholders:
+  - public universities
+  - workforce agencies
+  - ministries involved in higher education and manpower planning
+  - students and recent graduates
+- Add what each stakeholder cares about:
+  - curriculum relevance
+  - employability outcomes
+  - demand for technical and transferable skills
+  - resource prioritisation for programme updates
+- Explain how the project outputs support stakeholder decision-making:
+  - alignment summaries
+  - interpretable skills comparisons
+  - reusable data pipelines that can be refreshed with new data
+
+### 2.5 Deliverables
+
+- List the main deliverables of the project:
+  - cleaned jobs dataset
+  - cleaned university courses dataset
+  - baseline alignment pipeline
+  - experimental comparison pipeline
+  - STEM-specific alignment pipeline
+  - technical report and supporting artifacts
+- Note where these deliverables live in the repository:
+  - `src/notebooks/`
+  - `src/create_test/`
+  - `src/stem_test/`
+  - `data/cleaned_data/`
+  - `data/test/`
+
+## 3. Overall Report Structure
+
+This report is organised into three main analytical parts:
+
+- **Part I: Data Cleaning and Preparation**
+  - documents how raw job and course data were collected, cleaned, normalised, and converted into reusable analysis-ready datasets
+- **Part II: General Pipeline**
+  - explains the main alignment pipeline used to answer the project question
+  - compares the baseline and experimental approaches and justifies why the baseline pipeline is the main reporting approach
+- **Part III: STEM-Focused Pipeline**
+  - explains why a STEM-only pipeline was explored
+  - motivates STEM scoping as a way to reduce noise in the broader dataset
+  - compares STEM findings against the general pipeline findings
+
+This structure reflects the final project logic: the general pipeline provides the main answer to the project question, while the STEM pipeline acts as a narrower sensitivity analysis.
+
+## 4. Methodology
+
+### Part I: Data Cleaning and Preparation
 
 ### 3.1 Notebook 
 
@@ -42,6 +118,19 @@ Methodologically, the notebook follows a standard data engineering pattern:
 7. Run descriptive analyses to validate whether the cleaned dataset reflects plausible labour-market patterns.
 
 This sequence separates structural cleaning from analytical interpretation while keeping both in the same artifact for transparency.
+
+### 3.1A Project-Wide Pipeline Overview
+
+- Add a short end-to-end overview of the full project workflow:
+  - raw job and module data acquisition
+  - scraper outputs
+  - notebook-based cleaning
+  - downstream dataset construction
+  - canonical skill mapping
+  - module-job alignment
+- Clarify that the report should ultimately cover the full project system, not only the jobs notebook.
+- State that the notebook-cleaned PKL files are now the source of truth for downstream workflows.
+- Mention the standardized shell-script entrypoints for the supported pipelines.
 
 ### 3.2 Data Collection and Ingestion
 
@@ -158,7 +247,130 @@ The notebook also isolates a subset of data-related roles using keyword matching
 
 These summaries directly support the broader project objective. They show what employers actually ask for and create a bridge to course-side skill extraction. For a university or public-sector workforce unit, this is the dataset that can later be matched against curriculum content to identify alignment gaps.
 
-## 4. Findings and Evaluation 
+### 3.8 University Course Cleaning Methodology
+
+- Add a matching methodology subsection for `data_cleaning_university_merged.ipynb`.
+- Describe the course-side data sources:
+  - NUSMods API
+  - NTU scraper outputs and department mapping
+  - SUTD scraper outputs
+- Explain how module descriptions were cleaned and standardized.
+- Document the cleaned course schema:
+  - `code`
+  - `title`
+  - `department`
+  - `description`
+  - `university`
+  - skill-related fields stored in the cleaned PKL
+- Explain how module-side skills were produced in the notebook:
+  - `skills_embedding`
+  - `hard_skills`
+  - `soft_skills`
+- Add university-side data-quality issues:
+  - missing descriptions from NTU and SUTD
+  - uneven metadata richness across universities
+  - department or faculty inconsistencies
+
+### Part II: General Pipeline
+
+### 3.9 Downstream Baseline Pipeline
+
+- Add a subsection describing the official general pipeline in `src/create_test/`.
+- Explain the role of:
+  - `create_test_datasets.py`
+  - `build_canonical_skill_framework.py`
+  - `extract_job_ssoc3_from_original.py`
+  - `canonical_skill_mapper.py`
+  - `align_module_job_canonical.py`
+- State that this pipeline now starts from:
+  - `data/cleaned_data/combined_courses_cleaned.pkl`
+  - `data/cleaned_data/jobs_cleaned.pkl`
+- Explain the design decision to treat notebook-cleaned PKLs as the source of truth.
+- Mention the shell shortcut:
+  - `bash src/create_test/run_baseline_pipeline.sh`
+
+### 3.10 Experimental Comparison Pipeline
+
+- Add a subsection for the supported experimental path in `src/create_test/experimental/`.
+- Explain what is being compared:
+  - notebook-derived module skills versus independently extracted module skills
+- Clarify what stays fixed during the comparison:
+  - same module rows
+  - same job-side canonical outputs
+  - same canonical framework
+- Explain why this comparison is useful:
+  - isolates the effect of module skill extraction strategy
+  - tests robustness of the alignment findings
+- Mention the shell shortcut:
+  - `bash src/create_test/run_experimental_pipeline.sh`
+
+### Part III: STEM-Focused Pipeline
+
+### 3.11 STEM Pipeline
+
+- Add a subsection for the STEM-focused pipeline in `src/stem_test/`.
+- Explain why the STEM branch exists:
+  - narrower scope
+  - stronger focus on technically oriented module-job alignment
+  - ability to compare STEM-only alignment patterns against the broader baseline
+- Describe the active STEM steps:
+  - STEM scope classification
+  - STEM-only dataset creation
+  - independent module skill extraction
+  - job SSOC enrichment
+  - canonical skill mapping
+  - alignment
+- Note the design choice that the STEM pipeline is now PKL-first.
+- Mention the shell shortcut:
+  - `bash src/stem_test/run_stem_full_pipeline.sh`
+
+### 3.12 Canonical Skill Framework
+
+- Add a subsection explaining what the canonical framework is and why it is needed.
+- Explain the problem it solves:
+  - lexical variation across job and module skills
+  - the need for a shared skill vocabulary before alignment
+- Describe what is stored in the framework:
+  - canonical skill label
+  - skill type
+  - aliases
+  - excluded phrases
+- State that the framework is now shared across the baseline and STEM pipelines.
+- Explain why centralising it improves consistency and reproducibility.
+
+### 3.13 Alignment Methodology
+
+- Add a subsection explaining how module-job alignment is computed.
+- Describe the use of canonical skill overlaps and job-group aggregation.
+- Explain the role of SSOC grouping in structuring job demand.
+- Summarise the scoring logic in plain language:
+  - overlap
+  - coverage
+  - weighted similarity
+  - gap interpretation
+- Explain what the final output means for stakeholders:
+  - indicative alignment, not causal proof
+  - useful for curriculum review and prioritisation
+
+### 3.14 Reproducibility and Repository Design
+
+- Add a subsection documenting the repo cleanup and standardisation work.
+- Explain how the repo is organized into:
+  - baseline
+  - experimental
+  - STEM
+  - legacy
+- Mention the addition of shell-script shortcuts.
+- Explain why this matters:
+  - easier onboarding
+  - easier reruns
+  - clearer distinction between supported and exploratory code paths
+- Mention any validation performed:
+  - dry runs
+  - pipeline output checks
+  - consistency checks across frameworks
+
+## 5. Findings and Evaluation 
 
 ### 4.1 Robustness
 
@@ -177,7 +389,51 @@ There are, however, still limitations:
 
 These do not undermine the core cleaning pipeline, but they are important if the notebook is intended to serve as a polished production artifact.
 
-## 5. Limitations, Biases, and Ethical Considerations
+- Add a subsection evaluating execution for the full project, not only the jobs notebook:
+  - code organisation
+  - reproducibility
+  - readability
+  - documentation
+  - pipeline standardisation
+- Mention the creation of shell shortcuts and clearer folder structure.
+- Mention which parts of the project are now officially supported versus legacy.
+- Explain how the final repository design improves maintainability and handoff.
+
+### 4.3 Communication
+
+- Add an explicit communication subsection aligned with the rubric.
+- Evaluate:
+  - whether the outputs are interpretable
+  - whether the pipeline is understandable to a new user
+  - whether the README and technical report are clear enough for both technical and non-technical readers
+- Reference visual aids or propose visual aids that should appear in the report:
+  - pipeline diagram
+  - data attrition chart
+  - alignment summary table
+  - baseline vs experimental comparison table
+
+### 4.4 Project Findings
+
+- Add the actual end-to-end findings of the project here.
+- Suggested points to include:
+  - what the baseline alignment results suggest
+  - what types of modules align well with job demand
+  - where likely skill gaps appear
+  - what the STEM-focused analysis shows
+  - whether the experimental extractor materially changes the results
+- Translate these findings into stakeholder-relevant takeaways:
+  - curriculum review
+  - employability programming
+  - areas requiring deeper manual validation
+
+### 4.5 Policy and Stakeholder Implications
+
+- Add a subsection that connects findings to public-sector decision-making.
+- Explain how ministries, universities, and workforce agencies could use the outputs.
+- Clarify what decisions the project can support and what decisions it cannot support on its own.
+- Note that the outputs are best treated as evidence for prioritisation and review, not automatic policy prescriptions.
+
+## 6. Limitations, Biases, and Ethical Considerations
 
 Several limitations should be stated explicitly.
 
@@ -191,9 +447,55 @@ Fourth, the data-role subset is small at 29 postings. It is useful for illustrat
 
 Fifth, the notebook supports public-sector analysis but does not by itself resolve fairness concerns. For example, if certain industries systematically omit salary data or structured skills, the cleaned dataset may underrepresent them in downstream comparisons. Policymakers should treat the outputs as directional evidence rather than ground truth.
 
-## 6. Future areas for improvement
+Additional limitations to document:
 
- 
+- The university-side dataset may not fully capture teaching quality, learning outcomes, or pedagogical depth; it mainly captures textual module descriptions and extracted skills.
+- Canonical skill mapping introduces its own abstraction layer, which may merge distinct competencies or preserve distinctions that are not meaningful to employers.
+- Alignment scores are similarity-based and should not be interpreted as causal measures of programme effectiveness.
+- The STEM scope classification is rule-based and inherits the limitations of department-level labeling.
+- Changes in labour-market language over time may reduce comparability if the framework is not periodically refreshed.
 
-## 7. Conclusion
- 
+Ethical considerations to add:
+
+- Explain the risk of overinterpreting employer language as objective labour-market truth.
+- Note that course-job alignment should not be the only basis for judging educational value.
+- Acknowledge the risk that humanities or interdisciplinary programmes may look weaker under a purely skill-overlap framing.
+- Emphasise the importance of human review before using the outputs for high-stakes policy decisions.
+
+## 7. Future areas for improvement
+
+- Add concrete next steps for future project work:
+  - improve fresh-graduate scoping heuristics beyond years-of-experience filtering alone
+  - validate alignment outputs with expert review
+  - expand the canonical framework iteratively using feedback
+  - incorporate richer description-based skill extraction on the job side
+  - add stronger evaluation metrics for baseline versus experimental skill extraction
+  - extend analysis to trends over time or sector-specific substudies
+  - incorporate more universities or broader education pathways if relevant
+- Include future engineering improvements:
+  - automated tests
+  - versioned reference artifacts
+  - stronger notebook-to-pipeline validation checks
+
+## 8. Conclusion
+
+- Add a short closing section that returns to the main project question.
+- Summarise:
+  - what data assets were built
+  - what methodology was used
+  - what the project contributes to university-job alignment analysis
+- End with a balanced takeaway:
+  - the project provides a robust, interpretable starting point for evidence-based curriculum review
+  - but the outputs should be complemented by domain expertise and policy judgment
+
+## 9. Suggested Figures and Tables
+
+- Add a planning section for visuals if the final report will include them.
+- Suggested visuals:
+  - end-to-end pipeline diagram
+  - job cleaning attrition table or waterfall chart
+  - university data source summary table
+  - canonical skill framework diagram
+  - baseline versus experimental comparison table
+  - STEM versus general pipeline comparison table
+  - final alignment summary chart
