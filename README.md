@@ -1,151 +1,177 @@
 # DSA4264-Project
 
 ## Overview
-Our project analyses how well Singapore university courses prepare students today for real-world jobs. The following setup instructions will help you get started with our project. Ensure that the dependencies are properly installed, and the data pipeline is configured correctly.
 
-## Repository Strucutre
+This project studies how well Singapore university courses prepare students for real-world jobs.
 
-Include the repository tree here
+The repository contains two supported downstream pipelines:
 
-## How to run the project
+- `src/create_test/`
+  - the general baseline pipeline
+  - also includes an experimental comparison path
+- `src/stem_test/`
+  - the STEM-focused pipeline
 
-1. **Clone our repository**
+Both pipelines now start from notebook-cleaned data outputs and include shell-script shortcuts for the recommended runs.
 
-    ```{}
-    git clone https://github.com/jonleewh/DSA4264-Project.git
-    ```
+## Project Setup
 
-2. **Install data files**
+1. **Clone the repository**
 
-    To get started, please download the data files:
+```bash
+git clone https://github.com/jonleewh/DSA4264-Project.git
+cd DSA4264-Project
+```
 
-    - 
+2. **Install the required data files**
 
-3. **Create a virtual environment** (use Python 3.11 or higher)
+Place these files in the project before running the pipelines:
 
-    Run these commands from the **repository root**. We recommend creating the environment as `.venv/`.
+- `problem2.zip`
+  - extract its contents so the raw job data ends up under `data/data/`
+- `ssoc2020.xlsx`
+  - place in `data/`
+- `ntu_dept_mapping.xlsx`
+  - place in `data/`
 
-    Windows (PowerShell):
-    ```powershell
-    py -3.11 -m venv .venv
-    .\.venv\Scripts\Activate.ps1
-    deactivate
-    ```
+3. **Create `.env`**
 
-    Windows (Command Prompt):
-    ```bat
-    py -3.11 -m venv .venv
-    .\.venv\Scripts\activate
-    deactivate
-    ```
+Create a `.env` file in the repository root with:
 
-    macOS / Linux:
-    ```bash
-    python3 -m venv .venv
-    source .venv/bin/activate
-    deactivate
-    ```
+```bash
+nus_api="https://api.nusmods.com/v2/2025-2026/moduleInfo.json"
+```
 
-    If `py` is unavailable on Windows, use `python -m venv .venv` instead. If `python3` points to Python older than 3.11, use the exact interpreter name installed on your machine, such as `python3.11`.
+4. **Create a virtual environment**  
+Use Python 3.11 or higher.
 
-4. **Install dependencies**
+Windows (PowerShell):
 
-    To install the required dependencies, run:
-    ```bash
-    python -m pip install --upgrade pip
-    python -m pip install -r requirements.txt
-    ```
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+deactivate
+```
 
-    This also installs the Jupyter dependencies used by the notebooks.
+Windows (Command Prompt):
 
-5. **Start Jupyter for the notebooks**
+```bat
+py -3.11 -m venv .venv
+.\.venv\Scripts\activate
+deactivate
+```
 
-    Run Jupyter from the **repository root** so the notebooks can find the project files:
-    ```bash
-    python -m jupyter lab
-    ```
+macOS / Linux:
 
-    Then open the notebooks in `src/notebooks/`.
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+deactivate
+```
 
-6. **Run the scraper scripts**
+If `python3` points to an older version, use the exact interpreter name installed on your machine, such as `python3.11` or `python3.12`.
 
-    Run these from the repository root in this order:
-    ```bash
-    python src/scrappers/NTUMods.py
-    python src/scrappers/NTUModsDesc.py
-    python src/scrappers/NUSModsAPI.py
-    python src/scrappers/SUTDCourses.py
-    python src/scrappers/SUTDDesc.py
-    ```
+5. **Install dependencies**
 
-7. **Run the cleaning notebooks**
+```bash
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
 
-    The baseline pipeline assumes the notebooks have already produced:
-    - `data/cleaned_data/combined_courses_cleaned.pkl`
-    - `data/cleaned_data/jobs_cleaned.pkl`
+This also installs the Jupyter dependencies used by the notebooks.
 
-8. **Run the general model pipeline**
+## Data Preparation
 
-    The official general pipeline now lives in `src/create_test/baseline/`.
+1. **Run the scrapers**
 
-    Development / inspection mode:
-    ```bash
-    python src/create_test/baseline/create_test_datasets.py
-    ```
+Run these from the repository root in this order:
 
-    This creates sampled downstream datasets by default:
-    - 500 module rows
-    - 1000 job rows
+```bash
+python src/scrappers/NTUMods.py
+python src/scrappers/NTUModsDesc.py
+python src/scrappers/NUSModsAPI.py
+python src/scrappers/SUTDCourses.py
+python src/scrappers/SUTDDesc.py
+```
 
-    Full dataset mode:
-    ```bash
-    python src/create_test/baseline/create_test_datasets.py --full-dataset
-    ```
+You can also use the scraper shortcut:
 
-    Build the canonical skill framework used by the mapper:
-    ```bash
-    python src/create_test/baseline/build_canonical_skill_framework.py
-    ```
+```bash
+bash src/scrappers/run_scrappers_pipeline.sh
+```
 
-    Then continue with:
-    ```bash
-    python src/create_test/baseline/extract_job_ssoc3_from_original.py
-    ```
+2. **Run the cleaning notebooks**
 
-    Canonical mapping for both module-side and job-side skills:
-    ```bash
-    python src/create_test/baseline/canonical_skill_mapper.py
-    ```
+Start Jupyter from the repository root:
 
-    Optional narrower runs for debugging:
-    ```bash
-    python src/create_test/baseline/canonical_skill_mapper.py --target module
-    python src/create_test/baseline/canonical_skill_mapper.py --target job
-    ```
+```bash
+python -m jupyter lab
+```
 
-    Alignment:
-    ```bash
-    python src/create_test/baseline/align_module_job_canonical.py
-    ```
+Then run the notebooks in `src/notebooks/`.
 
-    Optional direct comparison against the independent module skill extractor:
-    ```bash
-    python src/create_test/experimental/run_independent_comparison.py
-    ```
+The downstream pipelines assume the notebooks have already produced:
 
-    This reuses the same baseline test rows, canonical framework, and job-side canonical outputs, so the comparison isolates only the module skill extraction method.
+- `data/cleaned_data/combined_courses_cleaned.pkl`
+- `data/cleaned_data/jobs_cleaned.pkl`
 
-9. **Set up pre-commit hooks**
+## Recommended Runs
 
+### General Baseline Pipeline
 
+Test-sized run:
 
-10. **Run the data pipelines**
+```bash
+bash src/create_test/run_baseline_pipeline.sh
+```
 
+Full-dataset run:
 
+```bash
+bash src/create_test/run_baseline_pipeline.sh full
+```
+
+### General Experimental Comparison Pipeline
+
+Test-sized run:
+
+```bash
+bash src/create_test/run_experimental_pipeline.sh
+```
+
+Full-dataset run:
+
+```bash
+bash src/create_test/run_experimental_pipeline.sh full
+```
+
+This experimental path compares the notebook-based module-skill route against the independent module-skill extractor while reusing the same baseline framework and job-side outputs.
+
+### STEM Pipeline
+
+Test-sized run:
+
+```bash
+bash src/stem_test/run_stem_full_pipeline.sh
+```
+
+Full-dataset run:
+
+```bash
+bash src/stem_test/run_stem_full_pipeline.sh full
+```
+
+## Folder Guides
+
+- `src/create_test/README.md`
+  - detailed notes for the general baseline and experimental pipelines
+- `src/stem_test/README.md`
+  - detailed notes for the STEM-focused pipeline
 
 ## Remarks
-- **Do not remove any lines from the `.gitignore` file** provided in the repository to prevent committing unnecessary or sensitive files.
-- **Do not commit any data or credentials** to the repository. Keep all credentials and configurations in your local directory.
-- `src/create_test/baseline/` is the official general pipeline.
-- `src/create_test/experimental/` contains the supported side-by-side comparison path for the independent module skill extractor.
-- `src/create_test/legacy/` contains older alternate extractors, benchmarking helpers, and reference scripts retained temporarily.
+
+- Do not commit credentials or local data files.
+- Keep secrets such as `.env` values only in your local environment.
+- `src/create_test/` is the supported general pipeline area.
+- `src/stem_test/` is the supported STEM pipeline area.
+- `legacy/` folders contain older scripts kept for reference and are not part of the recommended run flow.
