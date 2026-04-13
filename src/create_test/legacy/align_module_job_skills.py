@@ -10,7 +10,7 @@ from pathlib import Path
 from openpyxl import load_workbook
 import numpy as np
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 DEFAULT_MODULE_SKILLS = PROJECT_ROOT / "data" / "reupdated_skills.xlsx"
 DEFAULT_JOB_SKILLS = PROJECT_ROOT / "data" / "processed" / "jobs_cleaned.json"

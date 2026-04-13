@@ -4,48 +4,29 @@ import re
 from pathlib import Path
 
 import torch
-from keybert import KeyBERT
-from sentence_transformers import SentenceTransformer
+from sentence_transformers import SentenceTransformer, util
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_MODULE_INPUT = PROJECT_ROOT / "data" / "test" / "module_descriptions_test.json"
 DEFAULT_JOBS_DIR = PROJECT_ROOT / "data" / "data"
-DEFAULT_OUTPUT = PROJECT_ROOT / "data" / "test" / "module_descriptions_test_with_skills_keybert.json"
+DEFAULT_OUTPUT = PROJECT_ROOT / "data" / "test" / "module_descriptions_test_with_skills.json"
 DEFAULT_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 REQUIRED_TEST_FIELDS = ("id", "source", "title", "description")
 
-EDU_BLOCKLIST_SUBSTRINGS = [
-    "course",
-    "module",
-    "student",
-    "assessment",
-    "assignment",
-    "lecturer",
-    "classroom",
-    "prerequisite",
-    "seminar",
-    "credits",
-    "term ",
-    "workload",
-]
+GENERIC_SKILLS = {
+    "management",
+    "communications",
+    "communication",
+    "research",
+    "analysis",
+    "design",
+}
 
 
 def normalize_skill(text: str) -> str:
     text = re.sub(r"\s+", " ", (text or "")).strip()
     text = re.sub(r"^[^A-Za-z0-9]+|[^A-Za-z0-9+#/]+$", "", text)
     return text
-
-
-def is_industry_relevant(skill: str) -> bool:
-    s = skill.lower().strip()
-    if not s:
-        return False
-    if len(s) < 2 or len(s) > 60:
-        return False
-    for bad in EDU_BLOCKLIST_SUBSTRINGS:
-        if bad in s:
-            return False
-    return True
 
 
 def load_module_rows(path: Path, max_rows: int | None):
@@ -72,79 +53,60 @@ def load_job_skill_vocab(jobs_dir: Path):
         except Exception:
             continue
         for item in row.get("skills") or []:
-            skill = item.get("skill") if isinstance(item, dict) else str(item)
-            skill = normalize_skill(skill)
-            if is_industry_relevant(skill):
-                vocab.add(skill)
+            skill = normalize_skill(item.get("skill") if isinstance(item, dict) else str(item))
+            if not skill:
+                continue
+            if len(skill) < 2 or len(skill) > 60:
+                continue
+            if skill.lower() in GENERIC_SKILLS:
+                continue
+            vocab.add(skill)
     return sorted(vocab)
 
 
-def extract_skills_for_description(
-    kw_model: KeyBERT,
+def rank_skills_for_description(
+    model: SentenceTransformer,
     description: str,
     skill_vocab: list[str],
     skill_embeddings: torch.Tensor,
     top_k: int,
-    map_min_score: float,
-    desc_min_score: float,
+    min_score: float,
 ):
-    text = (description or "").strip()
-    if not text:
+    desc_text = (description or "").strip()[:2500]
+    if not desc_text:
         return []
 
-    ranked = kw_model.extract_keywords(
-        text[:2500],
-        keyphrase_ngram_range=(1, 3),
-        stop_words="english",
-        top_n=30,
-        use_mmr=True,
-        diversity=0.8,
+    desc_embedding = model.encode(
+        [desc_text],
+        convert_to_tensor=True,
+        normalize_embeddings=True,
     )
+    scores = util.cos_sim(desc_embedding, skill_embeddings)[0]
 
-    phrases = [normalize_skill(k) for k, _ in ranked if normalize_skill(k)]
-    if not phrases:
-        return []
+    top_count = min(max(top_k * 4, top_k), len(skill_vocab))
+    values, indices = torch.topk(scores, k=top_count)
 
-    phrase_embeddings = kw_model.model.embed(phrases)
-    phrase_embeddings = torch.tensor(phrase_embeddings)
-    phrase_embeddings = torch.nn.functional.normalize(phrase_embeddings, dim=1)
-
-    desc_embedding = kw_model.model.embed([text[:2500]])
-    desc_embedding = torch.tensor(desc_embedding)
-    desc_embedding = torch.nn.functional.normalize(desc_embedding, dim=1)
-    desc_scores = torch.matmul(desc_embedding, skill_embeddings.T)[0]
-    top_direct = set(torch.topk(desc_scores, k=min(200, len(skill_vocab))).indices.tolist())
-
-    chosen = []
+    selected = []
     seen = set()
-    sims = torch.matmul(phrase_embeddings, skill_embeddings.T)
-    values, indices = torch.max(sims, dim=1)
-
-    for phrase, score, idx in zip(phrases, values.tolist(), indices.tolist()):
-        if score < map_min_score:
-            continue
-        if idx not in top_direct:
-            continue
-        if desc_scores[idx].item() < desc_min_score:
+    for score, idx in zip(values.tolist(), indices.tolist()):
+        if score < min_score:
             continue
         skill = skill_vocab[idx]
-        if not is_industry_relevant(skill):
-            continue
         key = skill.lower()
         if key in seen:
             continue
         seen.add(key)
-        chosen.append(skill)
-        if len(chosen) >= top_k:
+        selected.append(skill)
+        if len(selected) >= top_k:
             break
 
-    return chosen
+    return selected
 
 
 def main():
     parser = argparse.ArgumentParser(
         description=(
-            "Extract industry-relevant skills from module test descriptions using KeyBERT. "
+            "Extract relevant skills for module test descriptions using transformer semantic matching. "
             "Input is expected to be generated by src/create_test/create_test_datasets.py."
         )
     )
@@ -153,8 +115,7 @@ def main():
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--model", type=str, default=DEFAULT_MODEL)
     parser.add_argument("--top-k", type=int, default=10)
-    parser.add_argument("--map-min-score", type=float, default=0.42)
-    parser.add_argument("--desc-min-score", type=float, default=0.34)
+    parser.add_argument("--min-score", type=float, default=0.33)
     parser.add_argument("--max-rows", type=int, default=None)
     args = parser.parse_args()
 
@@ -166,30 +127,25 @@ def main():
     module_rows = load_module_rows(args.module_input, args.max_rows)
     skill_vocab = load_job_skill_vocab(args.jobs_dir)
     if not skill_vocab:
-        raise RuntimeError(f"No usable skills found under: {args.jobs_dir}")
+        raise RuntimeError(f"No skills found in job files under: {args.jobs_dir}")
 
-    try:
-        st_model = SentenceTransformer(args.model, local_files_only=True)
-        print(f"Loaded model from local cache: {args.model}")
-    except Exception:
-        st_model = SentenceTransformer(args.model)
-        print(f"Downloaded model: {args.model}")
-    kw_model = KeyBERT(model=st_model)
-    skill_embeddings = kw_model.model.embed(skill_vocab)
-    skill_embeddings = torch.tensor(skill_embeddings)
-    skill_embeddings = torch.nn.functional.normalize(skill_embeddings, dim=1)
+    model = SentenceTransformer(args.model)
+    skill_embeddings = model.encode(
+        skill_vocab,
+        convert_to_tensor=True,
+        normalize_embeddings=True,
+    )
 
     output_rows = []
     total = len(module_rows)
     for i, row in enumerate(module_rows, start=1):
-        row["skills"] = extract_skills_for_description(
-            kw_model=kw_model,
+        row["skills"] = rank_skills_for_description(
+            model=model,
             description=row.get("description") or "",
             skill_vocab=skill_vocab,
             skill_embeddings=skill_embeddings,
             top_k=args.top_k,
-            map_min_score=args.map_min_score,
-            desc_min_score=args.desc_min_score,
+            min_score=args.min_score,
         )
         output_rows.append(row)
         if i % 50 == 0 or i == total:

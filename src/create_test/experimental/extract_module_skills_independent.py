@@ -1,11 +1,17 @@
 import argparse
 import json
 import re
+import sys
 from pathlib import Path
 
 import torch
-from keybert import KeyBERT
+from sklearn.feature_extraction.text import CountVectorizer
 from sentence_transformers import SentenceTransformer
+
+CURRENT_DIR = Path(__file__).resolve().parent
+PARENT_DIR = CURRENT_DIR.parent
+if str(PARENT_DIR) not in sys.path:
+    sys.path.insert(0, str(PARENT_DIR))
 
 from module_skill_rules import (
     ACADEMIC_LABEL_BLOCKLIST,
@@ -17,7 +23,7 @@ from module_skill_rules import (
     STRICT_CANONICAL_EVIDENCE,
 )
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_MODULE_INPUT = PROJECT_ROOT / "data" / "test" / "module_descriptions_test.jsonl"
 DEFAULT_OUTPUT = PROJECT_ROOT / "data" / "test" / "module_descriptions_test_with_skills_independent.jsonl"
 DEFAULT_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
@@ -59,20 +65,48 @@ def load_module_rows(path: Path, max_rows: int | None):
     return rows
 
 
-def extract_candidate_phrases(kw_model: KeyBERT, description: str):
+def extract_candidate_phrases(model: SentenceTransformer, description: str, top_n: int = 30):
     text = normalize_text(description)
     if not text:
         return []
-    ranked = kw_model.extract_keywords(
-        text[:2500],
-        keyphrase_ngram_range=(1, 3),
-        stop_words="english",
-        top_n=30,
-        use_mmr=True,
-        diversity=0.8,
+    text = text[:2500]
+
+    vectorizer = CountVectorizer(ngram_range=(1, 3), stop_words="english")
+    try:
+        vectorizer.fit([text])
+    except ValueError:
+        return []
+
+    candidates = [normalize_skill(phrase) for phrase in vectorizer.get_feature_names_out()]
+    candidates = [phrase for phrase in candidates if phrase]
+    if not candidates:
+        return []
+
+    desc_embedding = model.encode(
+        [text],
+        convert_to_tensor=True,
+        normalize_embeddings=True,
+        show_progress_bar=False,
     )
-    phrases = [normalize_skill(phrase) for phrase, _ in ranked if normalize_skill(phrase)]
-    return list(dict.fromkeys(phrases))
+    phrase_embeddings = model.encode(
+        candidates,
+        convert_to_tensor=True,
+        normalize_embeddings=True,
+        show_progress_bar=False,
+    )
+    scores = torch.matmul(desc_embedding, phrase_embeddings.T)[0]
+    values, indices = torch.topk(scores, k=min(top_n, len(candidates)))
+
+    ranked = []
+    seen = set()
+    for score, idx in zip(values.tolist(), indices.tolist()):
+        phrase = candidates[idx]
+        key = phrase.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        ranked.append((phrase, score))
+    return [phrase for phrase, _ in ranked]
 
 
 def find_rule_based_skills(description: str, phrases: list[str]):
@@ -108,7 +142,7 @@ def find_explicit_practical_phrases(description: str, phrases: list[str]):
 
 
 def semantic_normalize_phrases(
-    kw_model: KeyBERT,
+    model: SentenceTransformer,
     description: str,
     phrases: list[str],
     canonical_skills: list[str],
@@ -124,9 +158,12 @@ def semantic_normalize_phrases(
     if not usable_phrases:
         return []
 
-    phrase_embeddings = kw_model.model.embed(usable_phrases)
-    phrase_embeddings = torch.tensor(phrase_embeddings)
-    phrase_embeddings = torch.nn.functional.normalize(phrase_embeddings, dim=1)
+    phrase_embeddings = model.encode(
+        usable_phrases,
+        convert_to_tensor=True,
+        normalize_embeddings=True,
+        show_progress_bar=False,
+    )
     sims = torch.matmul(phrase_embeddings, canonical_embeddings.T)
     values, indices = torch.max(sims, dim=1)
 
@@ -195,20 +232,22 @@ def main():
         st_model = SentenceTransformer(args.model)
         print(f"Downloaded model: {args.model}")
 
-    kw_model = KeyBERT(model=st_model)
     canonical_skills = list(dict.fromkeys(CANONICAL_MODULE_SKILLS))
-    canonical_embeddings = kw_model.model.embed(canonical_skills)
-    canonical_embeddings = torch.tensor(canonical_embeddings)
-    canonical_embeddings = torch.nn.functional.normalize(canonical_embeddings, dim=1)
+    canonical_embeddings = st_model.encode(
+        canonical_skills,
+        convert_to_tensor=True,
+        normalize_embeddings=True,
+        show_progress_bar=False,
+    )
 
     output_rows = []
     total = len(module_rows)
     for i, row in enumerate(module_rows, start=1):
         description = row.get("description") or ""
-        phrases = extract_candidate_phrases(kw_model, description)
+        phrases = extract_candidate_phrases(st_model, description)
         rule_skills = find_rule_based_skills(description, phrases)
         normalized_skills = semantic_normalize_phrases(
-            kw_model=kw_model,
+            model=st_model,
             description=description,
             phrases=phrases,
             canonical_skills=canonical_skills,

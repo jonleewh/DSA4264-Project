@@ -3,11 +3,10 @@ import json
 import re
 from pathlib import Path
 
-import pandas as pd
 from openpyxl import load_workbook
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_CLEANED_JOBS_PKL = PROJECT_ROOT / "data" / "cleaned_data" / "jobs_cleaned.pkl"
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_TEST_JOBS_INPUT = PROJECT_ROOT / "data" / "test" / "job_descriptions_test.jsonl"
 DEFAULT_SSOC_XLSX = PROJECT_ROOT / "data" / "ssoc2020.xlsx"
 DEFAULT_OUTPUT_JSONL = PROJECT_ROOT / "data" / "test" / "job_ssoc345_with_skills_from_original.jsonl"
 DEFAULT_OUTPUT_JSON = PROJECT_ROOT / "data" / "test" / "job_ssoc345_with_skills_from_original.json"
@@ -66,9 +65,14 @@ def extract_skill_names(row: dict) -> list[str]:
 
 def load_cleaned_rows(input_path: Path) -> list[dict]:
     suffix = input_path.suffix.lower()
-    if suffix == ".pkl":
-        df = pd.read_pickle(input_path)
-        return df.to_dict("records")
+    if suffix == ".jsonl":
+        rows = []
+        with input_path.open("r", encoding="utf-8") as handle:
+            for line in handle:
+                line = line.strip()
+                if line:
+                    rows.append(json.loads(line))
+        return rows
     if suffix == ".json":
         payload = json.loads(input_path.read_text(encoding="utf-8"))
         if not isinstance(payload, list):
@@ -78,26 +82,25 @@ def load_cleaned_rows(input_path: Path) -> list[dict]:
         return payload
 
     raise ValueError(
-        f"Unsupported input format: {input_path}. Expected .pkl or .json."
+        f"Unsupported input format: {input_path}. Expected .jsonl or .json."
     )
 
 
 def main():
     parser = argparse.ArgumentParser(
         description=(
-            "Extract SSOC hierarchy from cleaned jobs and map to SSOC 2020 Excel, "
-            "then generate SSOC test datasets."
+            "Extract SSOC hierarchy from downstream job test rows and map to SSOC 2020 Excel."
         )
     )
-    parser.add_argument("--cleaned-jobs", type=Path, default=DEFAULT_CLEANED_JOBS_PKL)
+    parser.add_argument("--jobs-input", type=Path, default=DEFAULT_TEST_JOBS_INPUT)
     parser.add_argument("--ssoc-xlsx", type=Path, default=DEFAULT_SSOC_XLSX)
     parser.add_argument("--output-jsonl", type=Path, default=DEFAULT_OUTPUT_JSONL)
     parser.add_argument("--output-json", type=Path, default=DEFAULT_OUTPUT_JSON)
     parser.add_argument("--include-non-fresh", action="store_true")
     args = parser.parse_args()
 
-    if not args.cleaned_jobs.exists():
-        raise FileNotFoundError(f"Cleaned jobs input not found: {args.cleaned_jobs}")
+    if not args.jobs_input.exists():
+        raise FileNotFoundError(f"Job test input not found: {args.jobs_input}")
     if not args.ssoc_xlsx.exists():
         raise FileNotFoundError(f"SSOC Excel not found: {args.ssoc_xlsx}")
 
@@ -105,7 +108,7 @@ def main():
     if not ssoc_title_lookup:
         raise RuntimeError("No SSOC 3/4/5-digit rows found in the Excel file.")
 
-    cleaned_rows = load_cleaned_rows(args.cleaned_jobs)
+    cleaned_rows = load_cleaned_rows(args.jobs_input)
 
     fresh_only = not args.include_non_fresh
     mapped_rows: list[dict] = []

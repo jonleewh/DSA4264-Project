@@ -5,7 +5,7 @@ import random
 from pathlib import Path
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 TEST_DIR = PROJECT_ROOT / "data" / "test"
 DEFAULT_BASE = TEST_DIR / "module_descriptions_test.jsonl"
 DEFAULT_KEYBERT = TEST_DIR / "module_descriptions_test_with_skills_keybert.jsonl"

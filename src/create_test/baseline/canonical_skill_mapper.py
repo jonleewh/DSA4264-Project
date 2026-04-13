@@ -5,9 +5,13 @@ from pathlib import Path
 
 import numpy as np
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_FRAMEWORK = PROJECT_ROOT / "data" / "reference" / "canonical_skill_framework_v4.json"
 DEFAULT_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+DEFAULT_MODULE_INPUT = PROJECT_ROOT / "data" / "test" / "module_descriptions_test.jsonl"
+DEFAULT_MODULE_OUTPUT = PROJECT_ROOT / "data" / "test" / "module_skills_canonical.jsonl"
+DEFAULT_JOB_INPUT = PROJECT_ROOT / "data" / "test" / "job_ssoc345_with_skills_from_original.jsonl"
+DEFAULT_JOB_OUTPUT = PROJECT_ROOT / "data" / "test" / "job_skills_canonical.jsonl"
 
 
 def normalize_text(text: str | None) -> str:
@@ -248,6 +252,12 @@ def parse_args():
     parser.add_argument("--model", type=str, default=DEFAULT_MODEL)
     parser.add_argument("--threshold", type=float, default=0.72)
     parser.add_argument(
+        "--target",
+        choices=["both", "module", "job", "custom"],
+        default="both",
+        help="Which baseline dataset to canonicalize. Use 'custom' with --input-jsonl and --output-jsonl.",
+    )
+    parser.add_argument(
         "--phrases",
         type=str,
         default="",
@@ -259,6 +269,43 @@ def parse_args():
     parser.add_argument("--output-field", type=str, default="canonical_skills")
     parser.add_argument("--batch-size", type=int, default=256)
     return parser.parse_args()
+
+
+def map_jsonl_dataset(
+    mapper: "CanonicalSkillMapper",
+    input_jsonl: Path,
+    output_jsonl: Path,
+    input_field: str,
+    output_field: str,
+    batch_size: int,
+):
+    rows = []
+    all_phrases = []
+    with input_jsonl.open("r", encoding="utf-8") as f:
+        for line in f:
+            row = json.loads(line)
+            phrases = row.get(input_field) or []
+            all_phrases.extend(phrases)
+            rows.append(row)
+
+    mapper.warm_cache(all_phrases, batch_size=batch_size)
+
+    mapped_rows = []
+    for row in rows:
+        phrases = row.get(input_field) or []
+        mapped = mapper.map_phrases(phrases)
+        row[output_field] = sorted(
+            {item["canonical_skill"] for item in mapped if item["canonical_skill"]},
+        )
+        row[f"{output_field}_details"] = mapped
+        mapped_rows.append(row)
+
+    output_jsonl.parent.mkdir(parents=True, exist_ok=True)
+    with output_jsonl.open("w", encoding="utf-8") as f:
+        for row in mapped_rows:
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+    print(f"Mapped {len(mapped_rows)} rows using framework: {input_jsonl} -> {output_jsonl}")
 
 
 def main():
@@ -274,39 +321,65 @@ def main():
         print(json.dumps(mapper.map_phrases(phrases), indent=2, ensure_ascii=False))
         return
 
-    if args.input_jsonl and args.output_jsonl:
-        rows = []
-        all_phrases = []
-        with args.input_jsonl.open("r", encoding="utf-8") as f:
-            for line in f:
-                row = json.loads(line)
-                phrases = row.get(args.input_field) or []
-                 # collect phrases first so unique unresolved items can be cached in batches
-                all_phrases.extend(phrases)
-                rows.append(row)
+    if args.target == "both":
+        map_jsonl_dataset(
+            mapper=mapper,
+            input_jsonl=DEFAULT_MODULE_INPUT,
+            output_jsonl=DEFAULT_MODULE_OUTPUT,
+            input_field=args.input_field,
+            output_field=args.output_field,
+            batch_size=args.batch_size,
+        )
+        map_jsonl_dataset(
+            mapper=mapper,
+            input_jsonl=DEFAULT_JOB_INPUT,
+            output_jsonl=DEFAULT_JOB_OUTPUT,
+            input_field=args.input_field,
+            output_field=args.output_field,
+            batch_size=args.batch_size,
+        )
+        print(f"Saved outputs to: {DEFAULT_MODULE_OUTPUT} and {DEFAULT_JOB_OUTPUT}")
+        return
 
-        mapper.warm_cache(all_phrases, batch_size=args.batch_size)
+    if args.target == "module":
+        map_jsonl_dataset(
+            mapper=mapper,
+            input_jsonl=DEFAULT_MODULE_INPUT,
+            output_jsonl=DEFAULT_MODULE_OUTPUT,
+            input_field=args.input_field,
+            output_field=args.output_field,
+            batch_size=args.batch_size,
+        )
+        print(f"Saved output to: {DEFAULT_MODULE_OUTPUT}")
+        return
 
-        mapped_rows = []
-        for row in rows:
-            phrases = row.get(args.input_field) or []
-            mapped = mapper.map_phrases(phrases)
-            row[args.output_field] = sorted(
-                {item["canonical_skill"] for item in mapped if item["canonical_skill"]},
-            )
-            row[f"{args.output_field}_details"] = mapped
-            mapped_rows.append(row)
+    if args.target == "job":
+        map_jsonl_dataset(
+            mapper=mapper,
+            input_jsonl=DEFAULT_JOB_INPUT,
+            output_jsonl=DEFAULT_JOB_OUTPUT,
+            input_field=args.input_field,
+            output_field=args.output_field,
+            batch_size=args.batch_size,
+        )
+        print(f"Saved output to: {DEFAULT_JOB_OUTPUT}")
+        return
 
-        args.output_jsonl.parent.mkdir(parents=True, exist_ok=True)
-        with args.output_jsonl.open("w", encoding="utf-8") as f:
-            for row in mapped_rows:
-                f.write(json.dumps(row, ensure_ascii=False) + "\n")
-
-        print(f"Mapped {len(mapped_rows)} rows using framework: {args.framework}")
+    if args.target == "custom" and args.input_jsonl and args.output_jsonl:
+        map_jsonl_dataset(
+            mapper=mapper,
+            input_jsonl=args.input_jsonl,
+            output_jsonl=args.output_jsonl,
+            input_field=args.input_field,
+            output_field=args.output_field,
+            batch_size=args.batch_size,
+        )
         print(f"Saved output to: {args.output_jsonl}")
         return
 
-    raise SystemExit("Provide either --phrases or both --input-jsonl and --output-jsonl.")
+    raise SystemExit(
+        "Provide either --phrases, use the default --target modes, or use --target custom with both --input-jsonl and --output-jsonl."
+    )
 
 
 if __name__ == "__main__":

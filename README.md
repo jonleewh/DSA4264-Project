@@ -67,14 +67,85 @@ Include the repository tree here
 
     Then open the notebooks in `src/notebooks/`.
 
-6. **Set up pre-commit hooks**
+6. **Run the scraper scripts**
+
+    Run these from the repository root in this order:
+    ```bash
+    python src/scrappers/NTUMods.py
+    python src/scrappers/NTUModsDesc.py
+    python src/scrappers/NUSModsAPI.py
+    python src/scrappers/SUTDCourses.py
+    python src/scrappers/SUTDDesc.py
+    ```
+
+7. **Run the cleaning notebooks**
+
+    The baseline pipeline assumes the notebooks have already produced:
+    - `data/cleaned_data/combined_courses_cleaned.pkl`
+    - `data/cleaned_data/jobs_cleaned.pkl`
+
+8. **Run the general model pipeline**
+
+    The official general pipeline now lives in `src/create_test/baseline/`.
+
+    Development / inspection mode:
+    ```bash
+    python src/create_test/baseline/create_test_datasets.py
+    ```
+
+    This creates sampled downstream datasets by default:
+    - 500 module rows
+    - 1000 job rows
+
+    Full dataset mode:
+    ```bash
+    python src/create_test/baseline/create_test_datasets.py --full-dataset
+    ```
+
+    Build the canonical skill framework used by the mapper:
+    ```bash
+    python src/create_test/baseline/build_canonical_skill_framework.py
+    ```
+
+    Then continue with:
+    ```bash
+    python src/create_test/baseline/extract_job_ssoc3_from_original.py
+    ```
+
+    Canonical mapping for both module-side and job-side skills:
+    ```bash
+    python src/create_test/baseline/canonical_skill_mapper.py
+    ```
+
+    Optional narrower runs for debugging:
+    ```bash
+    python src/create_test/baseline/canonical_skill_mapper.py --target module
+    python src/create_test/baseline/canonical_skill_mapper.py --target job
+    ```
+
+    Alignment:
+    ```bash
+    python src/create_test/baseline/align_module_job_canonical.py
+    ```
+
+    Optional direct comparison against the independent module skill extractor:
+    ```bash
+    python src/create_test/experimental/run_independent_comparison.py
+    ```
+
+    This reuses the same baseline test rows, canonical framework, and job-side canonical outputs, so the comparison isolates only the module skill extraction method.
+
+9. **Set up pre-commit hooks**
 
 
 
-7. **Run the data pipelines**
+10. **Run the data pipelines**
 
 
 
 ## Remarks
 - **Do not remove any lines from the `.gitignore` file** provided in the repository to prevent committing unnecessary or sensitive files.
 - **Do not commit any data or credentials** to the repository. Keep all credentials and configurations in your local directory.
+- `src/create_test/baseline/` is the official general pipeline.
+- `src/create_test/experimental/` contains the supported side-by-side comparison path for the independent module skill extractor.
+- `src/create_test/legacy/` contains older alternate extractors, benchmarking helpers, and reference scripts retained temporarily.

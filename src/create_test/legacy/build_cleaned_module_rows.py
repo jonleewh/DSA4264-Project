@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 OUTPUT_PATH = PROJECT_ROOT / "data" / "cleaned_module_rows.jsonl"
 MIN_WORDS = 10
 NUS_POSTGRAD_FACULTIES = {

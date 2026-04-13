@@ -5,10 +5,10 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 TEST_DIR = PROJECT_ROOT / "data" / "test"
-DEFAULT_MODULE = TEST_DIR / "module_skills_canonical_sample_v3.jsonl"
-DEFAULT_JOB = TEST_DIR / "job_skills_canonical_v4.json"
+DEFAULT_MODULE = TEST_DIR / "module_skills_canonical.jsonl"
+DEFAULT_JOB = TEST_DIR / "job_skills_canonical.jsonl"
 DEFAULT_OUTPUT = TEST_DIR / "module_job_alignment_canonical.json"
 
 

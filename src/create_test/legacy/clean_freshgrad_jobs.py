@@ -4,7 +4,7 @@ import json
 import re
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_JOBS_DIR = PROJECT_ROOT / "data" / "data"
 DEFAULT_OUTPUT_JSON = PROJECT_ROOT / "data" / "processed" / "jobs_cleaned.json"
 DEFAULT_OUTPUT_JSONL = PROJECT_ROOT / "data" / "processed" / "jobs_cleaned.jsonl"

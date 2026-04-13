@@ -8,7 +8,7 @@ import torch
 from keybert import KeyBERT
 from sentence_transformers import SentenceTransformer
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_CLEANED_JOBS_INPUT = PROJECT_ROOT / "data" / "processed" / "job_freshgrad_cleaned.json"
 DEFAULT_TEST_OUTPUT = PROJECT_ROOT / "data" / "test" / "job_descriptions_test.json"
 DEFAULT_OUTPUT = PROJECT_ROOT / "data" / "test" / "job_descriptions_test_with_skills_keybert.json"
