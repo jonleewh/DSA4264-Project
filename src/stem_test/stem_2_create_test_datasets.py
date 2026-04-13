@@ -6,11 +6,13 @@ import re
 from pathlib import Path
 from typing import Optional
 
+import pandas as pd
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "data" / "test"
 DEFAULT_PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
-DEFAULT_CLEANED_MODULE_INPUT = PROJECT_ROOT / "data" / "cleaned_module_rows_STEM.jsonl"
-DEFAULT_PORTABLE_JOBS_INPUT = PROJECT_ROOT / "data" / "cleaned_data" / "jobs_cleaned_portable.jsonl"
+DEFAULT_CLEANED_MODULE_INPUT = PROJECT_ROOT / "data" / "cleaned_data" / "cleaned_module_rows_STEM.jsonl"
+DEFAULT_JOBS_INPUT = PROJECT_ROOT / "data" / "cleaned_data" / "jobs_cleaned.pkl"
 
 
 def clean_html(text: Optional[str]) -> str:
@@ -35,62 +37,40 @@ def load_jsonl(path: Path):
 
 
 def build_module_rows(min_description_length: int):
-    if DEFAULT_CLEANED_MODULE_INPUT.exists():
-        rows = []
-        for record in load_jsonl(DEFAULT_CLEANED_MODULE_INPUT):
-            desc = (record.get("description") or "").strip()
-            if len(desc) < min_description_length:
-                continue
-            rows.append(record)
-        print(f"Loaded cleaned module rows from: {DEFAULT_CLEANED_MODULE_INPUT}")
-        return rows
+    if not DEFAULT_CLEANED_MODULE_INPUT.exists():
+        raise FileNotFoundError(
+            "STEM module rows not found. Run "
+            "src/stem_test/stem_1_scope_classifier.py first to create "
+            f"{DEFAULT_CLEANED_MODULE_INPUT}."
+        )
 
     rows = []
-
-    cleaned_sources = [
-        ("NUS", DEFAULT_PROCESSED_DIR / "nus_cleaned.json", "moduleCode"),
-        ("NTU", DEFAULT_PROCESSED_DIR / "ntu_cleaned.json", "code"),
-        ("SUTD", DEFAULT_PROCESSED_DIR / "sutd_cleaned.json", "code"),
-    ]
-
-    for source_name, path, code_key in cleaned_sources:
-        if not path.exists():
+    for record in load_jsonl(DEFAULT_CLEANED_MODULE_INPUT):
+        desc = (record.get("description") or "").strip()
+        if len(desc) < min_description_length:
             continue
-
-        for record in load_json(path):
-            desc = (record.get("description") or "").strip()
-            if len(desc) < min_description_length:
-                continue
-
-            code = record.get(code_key)
-            if code is None:
-                continue
-
-            rows.append(
-                {
-                    "id": f"{source_name}::{code}",
-                    "source": source_name,
-                    "title": record.get("title"),
-                    "description": desc,
-                }
-            )
-
+        rows.append(record)
+    print(f"Loaded STEM module rows from: {DEFAULT_CLEANED_MODULE_INPUT}")
     return rows
 
 
 def build_job_rows(min_description_length: int):
     rows = []
-    if DEFAULT_PORTABLE_JOBS_INPUT.exists():
-        for record in load_jsonl(DEFAULT_PORTABLE_JOBS_INPUT):
+    if DEFAULT_JOBS_INPUT.exists():
+        df = pd.read_pickle(DEFAULT_JOBS_INPUT)
+        for record in df.to_dict("records"):
             desc = clean_html(record.get("description"))
             if len(desc) < min_description_length:
                 continue
 
-            job_id = record.get("id") or record.get("uuid")
+            job_id = record.get("uuid")
+            if not job_id:
+                continue
+
             rows.append(
                 {
                     "id": job_id,
-                    "source": record.get("sourceCode"),
+                    "source": record.get("source") or "MCF",
                     "title": record.get("title"),
                     "description": desc,
                 }

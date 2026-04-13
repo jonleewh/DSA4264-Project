@@ -16,7 +16,7 @@ from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_INPUT = PROJECT_ROOT / "data" / "cleaned_module_rows_STEM.jsonl"
+DEFAULT_INPUT = PROJECT_ROOT / "data" / "cleaned_data" / "cleaned_module_rows_STEM.jsonl"
 DEFAULT_RULES_FILE = PROJECT_ROOT / "src" / "stem_test" / "module_skill_rules.py"
 DEFAULT_REPORT = PROJECT_ROOT / "data" / "reference" / "module_skill_rules_generated_report.json"
 DEFAULT_MODEL = "sentence-transformers/all-MiniLM-L6-v2"

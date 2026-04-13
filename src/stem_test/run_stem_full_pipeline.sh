@@ -4,6 +4,12 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
+MODE="${1:-test}"
+if [[ "$MODE" != "test" && "$MODE" != "full" ]]; then
+  echo "Usage: bash src/stem_test/run_stem_full_pipeline.sh [test|full]" >&2
+  exit 2
+fi
+
 if [[ -x "$ROOT_DIR/.venv/bin/python" ]]; then
   PYTHON_BIN="$ROOT_DIR/.venv/bin/python"
 elif [[ -x "$ROOT_DIR/venv/bin/python" ]]; then
@@ -19,9 +25,8 @@ else
   exit 127
 fi
 
-"$PYTHON_BIN" src/stem_test/stem_prepare_portable_inputs.py
-"$PYTHON_BIN" src/stem_test/stem_1a_generate_scope_classifications.py
-"$PYTHON_BIN" src/stem_test/stem_1b_scope_classifier.py
+"$PYTHON_BIN" src/stem_test/stem_1_generate_scope_classifications.py
+"$PYTHON_BIN" src/stem_test/stem_1_scope_classifier.py
 "$PYTHON_BIN" src/stem_test/stem_2_create_test_datasets.py
 "$PYTHON_BIN" src/stem_test/stem_5_build_canonical_skill_framework.py
 if [[ "${RUN_RULE_REGEN:-0}" == "1" ]]; then
@@ -29,10 +34,17 @@ if [[ "${RUN_RULE_REGEN:-0}" == "1" ]]; then
 else
   echo "Skipping stem_0_generate_module_skill_rules.py (set RUN_RULE_REGEN=1 to enable rule regeneration)."
 fi
-"$PYTHON_BIN" src/stem_test/stem_3f_extract_module_skills_independent.py
-"$PYTHON_BIN" src/stem_test/stem_4f_extract_job_ssoc3_from_original.py
-"$PYTHON_BIN" src/stem_test/stem_5_build_canonical_skill_framework.py
-"$PYTHON_BIN" src/stem_test/stem_6f_canonical_skill_mapper.py --map-stem-pipeline
-"$PYTHON_BIN" src/stem_test/stem_8f_align_module_job_canonical.py
 
-echo "Full STEM pipeline completed. Outputs are in data/stem_full/"
+if [[ "$MODE" == "full" ]]; then
+  "$PYTHON_BIN" src/stem_test/stem_3_extract_module_skills_independent.py --full-dataset
+  "$PYTHON_BIN" src/stem_test/stem_4_extract_job_ssoc3_from_original.py --full-dataset
+  "$PYTHON_BIN" src/stem_test/stem_6_canonical_skill_mapper.py --full-dataset --map-stem-pipeline
+  "$PYTHON_BIN" src/stem_test/stem_8_align_module_job_canonical.py --full-dataset
+  echo "Full STEM pipeline completed. Outputs are in data/stem_full/"
+else
+  "$PYTHON_BIN" src/stem_test/stem_3_extract_module_skills_independent.py
+  "$PYTHON_BIN" src/stem_test/stem_4_extract_job_ssoc3_from_original.py
+  "$PYTHON_BIN" src/stem_test/stem_6_canonical_skill_mapper.py --map-stem-pipeline
+  "$PYTHON_BIN" src/stem_test/stem_8_align_module_job_canonical.py
+  echo "Test STEM pipeline completed. Outputs are in data/test/"
+fi

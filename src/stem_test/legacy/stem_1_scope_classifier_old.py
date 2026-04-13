@@ -2,7 +2,7 @@ import argparse
 import json
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional, Set
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -15,18 +15,59 @@ NUS_FILE = REFERENCE_DIR / "nus_stem_classification_v1.json"
 NTU_FILE = REFERENCE_DIR / "ntu_stem_classification_v1.json"
 SUTD_FILE = REFERENCE_DIR / "sutd_stem_classification_v1.json"
 
+STEM_TEXT_PATTERNS = [
+    r"\bcomputer\b",
+    r"\bcomputing\b",
+    r"\bdata\b",
+    r"\banalytics?\b",
+    r"\bstatistics?\b",
+    r"\bmathematics?\b",
+    r"\bmath\b",
+    r"\bphysics?\b",
+    r"\bchem(?:istry|ical)\b",
+    r"\bbiology\b",
+    r"\bbiotech\b",
+    r"\bengineering\b",
+    r"\belectrical\b",
+    r"\bmechanical\b",
+    r"\bcivil\b",
+    r"\bmaterials?\b",
+    r"\bscience\b",
+    r"\btechnology\b",
+    r"\binformation systems?\b",
+    r"\bai\b",
+]
 
-def _norm(value: str | None) -> str:
+NON_STEM_TEXT_PATTERNS = [
+    r"\bhistory\b",
+    r"\bliterature\b",
+    r"\blanguage\b",
+    r"\bphilosophy\b",
+    r"\barts?\b",
+    r"\bmusic\b",
+    r"\blaw\b",
+    r"\beducation\b",
+    r"\bbusiness\b",
+    r"\baccounting\b",
+    r"\bmarketing\b",
+    r"\bfinance\b",
+    r"\bcommunications?\b",
+    r"\bsocial science\b",
+    r"\bpolitical\b",
+]
+
+
+def _norm(value: Optional[str]) -> str:
     return (value or "").strip()
 
 
 def _load_json(path: Path) -> dict[str, Any]:
     if not path.exists():
-        raise FileNotFoundError(f"Classification file not found: {path}")
+        return {}
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def _to_set(values: list[str] | None) -> set[str]:
+def _to_set(values: Optional[list[str]]) -> Set[str]:
     return {_norm(v) for v in (values or []) if _norm(v)}
 
 
@@ -82,11 +123,11 @@ EXCLUDED_MODULE_PATTERNS: list[tuple[str, str]] = [
 
 
 def _exclusion_reason(
-    title: str | None,
-    description: str | None,
-    department: str | None = None,
-    faculty: str | None = None,
-) -> str | None:
+    title: Optional[str],
+    description: Optional[str],
+    department: Optional[str] = None,
+    faculty: Optional[str] = None,
+) -> Optional[str]:
     text = " ".join(
         [
             _norm(title).lower(),
@@ -104,7 +145,7 @@ def _exclusion_reason(
     return None
 
 
-def _quant_signal_score(title: str | None, description: str | None) -> int:
+def _quant_signal_score(title: Optional[str], description: Optional[str]) -> int:
     text = f"{_norm(title).lower()} {_norm(description).lower()}"
     if not text.strip():
         return 0
@@ -121,8 +162,19 @@ def _quant_signal_score(title: str | None, description: str | None) -> int:
     return score
 
 
-def is_quantitative_module(title: str | None, description: str | None, min_score: int = 3) -> bool:
+def is_quantitative_module(title: Optional[str], description: Optional[str], min_score: int = 3) -> bool:
     return _quant_signal_score(title, description) >= min_score
+
+
+def heuristic_scope_from_text(department: Optional[str], faculty: Optional[str]) -> Optional[str]:
+    text = " ".join([_norm(department).lower(), _norm(faculty).lower()]).strip()
+    if not text:
+        return None
+    if any(re.search(pattern, text) for pattern in STEM_TEXT_PATTERNS):
+        return "clear_stem"
+    if any(re.search(pattern, text) for pattern in NON_STEM_TEXT_PATTERNS):
+        return "clear_non_stem"
+    return None
 
 
 class StemScopeClassifier:
@@ -164,11 +216,11 @@ class StemScopeClassifier:
 
     def classify_module_scope(
         self,
-        source: str | None,
-        department: str | None = None,
-        faculty: str | None = None,
-        title: str | None = None,
-        description: str | None = None,
+        source: Optional[str],
+        department: Optional[str] = None,
+        faculty: Optional[str] = None,
+        title: Optional[str] = None,
+        description: Optional[str] = None,
         quant_min_score: int = 3,
     ) -> dict[str, str]:
         source_n = _norm(source).upper()
@@ -213,6 +265,12 @@ class StemScopeClassifier:
                 base_bucket, base_reason = "clear_non_stem", "sutd_department_clear_non_stem"
             else:
                 base_bucket, base_reason = "unclear_or_mixed", "sutd_unlisted_or_mixed"
+
+        heuristic_bucket = heuristic_scope_from_text(dept_n, fac_n)
+        if base_bucket == "unclear_or_mixed" and heuristic_bucket == "clear_stem":
+            base_bucket, base_reason = "clear_stem", "department_text_heuristic_stem"
+        elif base_bucket == "unclear_or_mixed" and heuristic_bucket == "clear_non_stem":
+            base_bucket, base_reason = "clear_non_stem", "department_text_heuristic_non_stem"
 
         if base_bucket != "clear_stem" and is_quantitative_module(title, description, min_score=quant_min_score):
             if base_bucket == "clear_non_stem":
@@ -298,8 +356,8 @@ def build_stem_rows(rows: list[dict[str, Any]], processed_dir: Path, quant_min_s
         meta = module_meta.get(_norm(row.get("id")), {})
         out = clf.classify_module_scope(
             source=row.get("source"),
-            department=meta.get("department"),
-            faculty=meta.get("faculty"),
+            department=meta.get("department") or row.get("department"),
+            faculty=meta.get("faculty") or row.get("faculty"),
             title=row.get("title"),
             description=row.get("description"),
             quant_min_score=quant_min_score,

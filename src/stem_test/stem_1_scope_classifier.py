@@ -2,72 +2,33 @@ import argparse
 import json
 import re
 from pathlib import Path
-from typing import Any, Optional, Set
+from typing import Any
+
+import pandas as pd
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 REFERENCE_DIR = PROJECT_ROOT / "data" / "reference"
-DEFAULT_CLEANED_MODULE_INPUT = PROJECT_ROOT / "data" / "cleaned_module_rows.jsonl"
+DEFAULT_COURSES_INPUT = PROJECT_ROOT / "data" / "cleaned_data" / "combined_courses_cleaned.pkl"
 DEFAULT_PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
-DEFAULT_STEM_OUTPUT = PROJECT_ROOT / "data" / "cleaned_module_rows_STEM.jsonl"
+DEFAULT_STEM_OUTPUT = PROJECT_ROOT / "data" / "cleaned_data" / "cleaned_module_rows_STEM.jsonl"
 
 NUS_FILE = REFERENCE_DIR / "nus_stem_classification_v1.json"
 NTU_FILE = REFERENCE_DIR / "ntu_stem_classification_v1.json"
 SUTD_FILE = REFERENCE_DIR / "sutd_stem_classification_v1.json"
 
-STEM_TEXT_PATTERNS = [
-    r"\bcomputer\b",
-    r"\bcomputing\b",
-    r"\bdata\b",
-    r"\banalytics?\b",
-    r"\bstatistics?\b",
-    r"\bmathematics?\b",
-    r"\bmath\b",
-    r"\bphysics?\b",
-    r"\bchem(?:istry|ical)\b",
-    r"\bbiology\b",
-    r"\bbiotech\b",
-    r"\bengineering\b",
-    r"\belectrical\b",
-    r"\bmechanical\b",
-    r"\bcivil\b",
-    r"\bmaterials?\b",
-    r"\bscience\b",
-    r"\btechnology\b",
-    r"\binformation systems?\b",
-    r"\bai\b",
-]
 
-NON_STEM_TEXT_PATTERNS = [
-    r"\bhistory\b",
-    r"\bliterature\b",
-    r"\blanguage\b",
-    r"\bphilosophy\b",
-    r"\barts?\b",
-    r"\bmusic\b",
-    r"\blaw\b",
-    r"\beducation\b",
-    r"\bbusiness\b",
-    r"\baccounting\b",
-    r"\bmarketing\b",
-    r"\bfinance\b",
-    r"\bcommunications?\b",
-    r"\bsocial science\b",
-    r"\bpolitical\b",
-]
-
-
-def _norm(value: Optional[str]) -> str:
+def _norm(value: str | None) -> str:
     return (value or "").strip()
 
 
 def _load_json(path: Path) -> dict[str, Any]:
     if not path.exists():
-        return {}
+        raise FileNotFoundError(f"Classification file not found: {path}")
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def _to_set(values: Optional[list[str]]) -> Set[str]:
+def _to_set(values: list[str] | None) -> set[str]:
     return {_norm(v) for v in (values or []) if _norm(v)}
 
 
@@ -123,11 +84,11 @@ EXCLUDED_MODULE_PATTERNS: list[tuple[str, str]] = [
 
 
 def _exclusion_reason(
-    title: Optional[str],
-    description: Optional[str],
-    department: Optional[str] = None,
-    faculty: Optional[str] = None,
-) -> Optional[str]:
+    title: str | None,
+    description: str | None,
+    department: str | None = None,
+    faculty: str | None = None,
+) -> str | None:
     text = " ".join(
         [
             _norm(title).lower(),
@@ -145,7 +106,7 @@ def _exclusion_reason(
     return None
 
 
-def _quant_signal_score(title: Optional[str], description: Optional[str]) -> int:
+def _quant_signal_score(title: str | None, description: str | None) -> int:
     text = f"{_norm(title).lower()} {_norm(description).lower()}"
     if not text.strip():
         return 0
@@ -162,19 +123,8 @@ def _quant_signal_score(title: Optional[str], description: Optional[str]) -> int
     return score
 
 
-def is_quantitative_module(title: Optional[str], description: Optional[str], min_score: int = 3) -> bool:
+def is_quantitative_module(title: str | None, description: str | None, min_score: int = 3) -> bool:
     return _quant_signal_score(title, description) >= min_score
-
-
-def heuristic_scope_from_text(department: Optional[str], faculty: Optional[str]) -> Optional[str]:
-    text = " ".join([_norm(department).lower(), _norm(faculty).lower()]).strip()
-    if not text:
-        return None
-    if any(re.search(pattern, text) for pattern in STEM_TEXT_PATTERNS):
-        return "clear_stem"
-    if any(re.search(pattern, text) for pattern in NON_STEM_TEXT_PATTERNS):
-        return "clear_non_stem"
-    return None
 
 
 class StemScopeClassifier:
@@ -216,11 +166,11 @@ class StemScopeClassifier:
 
     def classify_module_scope(
         self,
-        source: Optional[str],
-        department: Optional[str] = None,
-        faculty: Optional[str] = None,
-        title: Optional[str] = None,
-        description: Optional[str] = None,
+        source: str | None,
+        department: str | None = None,
+        faculty: str | None = None,
+        title: str | None = None,
+        description: str | None = None,
         quant_min_score: int = 3,
     ) -> dict[str, str]:
         source_n = _norm(source).upper()
@@ -266,12 +216,6 @@ class StemScopeClassifier:
             else:
                 base_bucket, base_reason = "unclear_or_mixed", "sutd_unlisted_or_mixed"
 
-        heuristic_bucket = heuristic_scope_from_text(dept_n, fac_n)
-        if base_bucket == "unclear_or_mixed" and heuristic_bucket == "clear_stem":
-            base_bucket, base_reason = "clear_stem", "department_text_heuristic_stem"
-        elif base_bucket == "unclear_or_mixed" and heuristic_bucket == "clear_non_stem":
-            base_bucket, base_reason = "clear_non_stem", "department_text_heuristic_non_stem"
-
         if base_bucket != "clear_stem" and is_quantitative_module(title, description, min_score=quant_min_score):
             if base_bucket == "clear_non_stem":
                 return {"scope_bucket": "quant_non_stem", "scope_reason": "quant_semantic_override_non_stem"}
@@ -306,6 +250,45 @@ def _write_jsonl(path: Path, rows: list[dict[str, Any]]):
     with path.open("w", encoding="utf-8") as f:
         for row in rows:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+
+def load_courses_from_pkl(path: Path) -> list[dict[str, Any]]:
+    if not path.exists():
+        raise FileNotFoundError(f"Cleaned courses input not found: {path}")
+
+    df = pd.read_pickle(path)
+    required_cols = {"code", "title", "description", "department", "university"}
+    missing = sorted(required_cols - set(df.columns))
+    if missing:
+        raise ValueError(
+            f"Missing required course columns in {path}: {missing}"
+        )
+
+    rows: list[dict[str, Any]] = []
+    for record in df.to_dict("records"):
+        code = _norm(record.get("code"))
+        university = _norm(record.get("university"))
+        description = _norm(record.get("description"))
+        if not code or not university or not description:
+            continue
+
+        rows.append(
+            {
+                "id": f"{university}::{code}",
+                "source": university,
+                "code": code,
+                "title": _norm(record.get("title")),
+                "department": _norm(record.get("department")),
+                "university": university,
+                "description": description,
+                "skills": record.get("skills_embedding") if isinstance(record.get("skills_embedding"), list) else [],
+                "hard_skills": record.get("hard_skills") if isinstance(record.get("hard_skills"), list) else [],
+                "soft_skills": record.get("soft_skills") if isinstance(record.get("soft_skills"), list) else [],
+                "num_skills": record.get("num_skills"),
+            }
+        )
+
+    return rows
 
 
 def build_module_meta_lookup(processed_dir: Path):
@@ -356,8 +339,8 @@ def build_stem_rows(rows: list[dict[str, Any]], processed_dir: Path, quant_min_s
         meta = module_meta.get(_norm(row.get("id")), {})
         out = clf.classify_module_scope(
             source=row.get("source"),
-            department=meta.get("department") or row.get("department"),
-            faculty=meta.get("faculty") or row.get("faculty"),
+            department=meta.get("department"),
+            faculty=meta.get("faculty"),
             title=row.get("title"),
             description=row.get("description"),
             quant_min_score=quant_min_score,
@@ -382,9 +365,9 @@ def _parse_args():
     parser.add_argument(
         "--build-stem-rows",
         action="store_true",
-        help="Build STEM-only rows from cleaned_module_rows.jsonl and save cleaned_module_rows_STEM.jsonl.",
+        help="Build STEM-only rows from combined_courses_cleaned.pkl and save data/cleaned_data/cleaned_module_rows_STEM.jsonl.",
     )
-    parser.add_argument("--cleaned-input", type=Path, default=DEFAULT_CLEANED_MODULE_INPUT)
+    parser.add_argument("--courses-input", type=Path, default=DEFAULT_COURSES_INPUT)
     parser.add_argument("--processed-dir", type=Path, default=DEFAULT_PROCESSED_DIR)
     parser.add_argument("--stem-output", type=Path, default=DEFAULT_STEM_OUTPUT)
     return parser.parse_args()
@@ -394,9 +377,7 @@ def main():
     args = _parse_args()
     run_build_mode = args.build_stem_rows or (args.input is None and args.source is None)
     if run_build_mode:
-        if not args.cleaned_input.exists():
-            raise FileNotFoundError(f"Cleaned module input file not found: {args.cleaned_input}")
-        rows = _load_rows(args.cleaned_input)
+        rows = load_courses_from_pkl(args.courses_input)
         stem_rows = build_stem_rows(rows, processed_dir=args.processed_dir, quant_min_score=args.quant_min_score)
         _write_jsonl(args.stem_output, stem_rows)
         print(f"Input rows: {len(rows)}")
