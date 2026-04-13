@@ -33,7 +33,7 @@ def render_page(query: str = "", result: dict | None = None) -> str:
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>MOE Job-STEM Copilot</title>
+  <title>MOE Job-Module Copilot</title>
   <style>
     :root {{
       --bg: #f4efe6;
@@ -189,10 +189,10 @@ def render_page(query: str = "", result: dict | None = None) -> str:
 <body>
   <main class="shell">
     <section class="hero">
-      <h1>MOE Job-STEM Copilot</h1>
+      <h1>MOE Job-Module Copilot</h1>
       <p>
         Search job ads in natural language, surface the most relevant listings, and explain which
-        STEM modules best match the skills employers are asking for based on the stem_test pipeline.
+        university modules best match the skills employers are asking for based on the baseline canonical pipeline.
       </p>
     </section>
 
@@ -200,7 +200,7 @@ def render_page(query: str = "", result: dict | None = None) -> str:
       <form method="post" action="/">
         <label for="query"><strong>Ask in natural language</strong></label>
         <textarea id="query" name="query" placeholder="Example: Find entry-level data analyst jobs that use Python and SQL">{query}</textarea>
-        <button class="primary" type="submit">Search Jobs And Recommend STEM Modules</button>
+        <button class="primary" type="submit">Search Jobs And Recommend University Modules</button>
       </form>
     </section>
 
@@ -225,7 +225,7 @@ def render_results(result: dict) -> str:
     <div class="stat-strip">
       <div class="stat"><span>Matched job ads</span><strong>{stats['matched_job_count']}</strong></div>
       <div class="stat"><span>Top jobs returned</span><strong>{stats['returned_job_count']}</strong></div>
-      <div class="stat"><span>Top STEM modules</span><strong>{stats['returned_module_count']}</strong></div>
+      <div class="stat"><span>Top modules</span><strong>{stats['returned_module_count']}</strong></div>
     </div>
     """
 
@@ -235,27 +235,30 @@ def render_results(result: dict) -> str:
     )
     interpreted_skills = render_chip_list(interpreted["skills"], empty_text="No exact skill phrases detected")
 
-    stem_status = result["stem_status"]
+    recommendation_status = result["recommendation_status"]
     jobs_html = "".join(render_job(job) for job in result["jobs"]) or "<p>No job matches yet.</p>"
     if result["modules"]:
         modules_html = "".join(render_module(module) for module in result["modules"])
-    elif not stem_status.get("available"):
+    elif not recommendation_status.get("available"):
         missing_list = ""
-        if stem_status.get("missing_paths"):
+        if recommendation_status.get("missing_paths"):
             items = "".join(
-                f"<li><code>{html.escape(path)}</code></li>" for path in stem_status["missing_paths"]
+                f"<li><code>{html.escape(path)}</code></li>" for path in recommendation_status["missing_paths"]
             )
             missing_list = f"<ul>{items}</ul>"
         modules_html = (
-            f"<p>{html.escape(stem_status['message'])}</p>"
-            "<p class=\"meta\">Run the STEM pipeline first, then reload the app.</p>"
+            f"<p>{html.escape(recommendation_status['message'])}</p>"
+            "<p class=\"meta\">Run the baseline pipeline first, then reload the app.</p>"
             f"{missing_list}"
         )
     else:
-        modules_html = "<p>No STEM module matches were found for this query.</p>"
+        modules_html = "<p>No university module matches were found for this query.</p>"
     missing_html = ""
-    if stem_status.get("missing_paths"):
-        items = "".join(f"<li><code>{html.escape(path)}</code></li>" for path in stem_status["missing_paths"])
+    if recommendation_status.get("missing_paths"):
+        items = "".join(
+            f"<li><code>{html.escape(path)}</code></li>"
+            for path in recommendation_status["missing_paths"]
+        )
         missing_html = f"<ul>{items}</ul>"
 
     return f"""
@@ -279,10 +282,10 @@ def render_results(result: dict) -> str:
           {top_skills}
         </div>
         <div class="card">
-          <h2>STEM Pipeline Status</h2>
-          <p class="meta">{html.escape(stem_status['message'])}</p>
-          <p class="meta">Canonical matched jobs: <code>{html.escape(str(stem_status.get('canonical_job_match_count', 0)))}</code></p>
-          <p class="meta">Active school filter: <code>{html.escape(str(stem_status.get('school_filter') or 'Any'))}</code></p>
+          <h2>Baseline Pipeline Status</h2>
+          <p class="meta">{html.escape(recommendation_status['message'])}</p>
+          <p class="meta">Canonical matched jobs: <code>{html.escape(str(recommendation_status.get('canonical_job_match_count', 0)))}</code></p>
+          <p class="meta">Active school filter: <code>{html.escape(str(recommendation_status.get('school_filter') or 'Any'))}</code></p>
           {missing_html}
         </div>
       </div>
@@ -294,7 +297,7 @@ def render_results(result: dict) -> str:
         {jobs_html}
       </div>
       <div class="card">
-        <h2>Relevant STEM Modules</h2>
+        <h2>Relevant University Modules</h2>
         {modules_html}
       </div>
     </section>
