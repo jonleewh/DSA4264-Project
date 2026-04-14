@@ -185,13 +185,16 @@ The final distribution of skill counts is plausible for job postings:
 
 The notebook also exports raw and cleaned skill-frequency tables to Excel, which is valuable for stakeholder review. Non-technical reviewers can inspect the vocabulary and challenge cleaning rules if necessary, making the process more governable.
 
-#### 2.1.7 Output Structure and Reusability
+#### 2.1.7 Evaluating Goodness of Job 
+**to be added back after section is restored in notebook!!!**
+
+#### 2.1.8 Output Structure and Reusability
 
 The cleaned dataset is saved as `data/cleaned_data/jobs_cleaned.pkl`. Before saving, the notebook drops intermediate helper columns and reorders the final schema so downstream consumers receive a compact, consistent table.
 
 This is good execution practice. Instead of passing along every temporary artifact created during cleaning, the notebook separates internal processing columns from production-facing outputs. That makes later analysis cleaner and reduces accidental dependency on unstable intermediate fields.
 
-#### 2.1.8 Descriptive Validation and Exploratory Analysis
+#### 2.1.9 Descriptive Validation and Exploratory Analysis
 
 The second half of the notebook performs descriptive analysis on the cleaned data. This is not merely exploratory; it acts as a validation layer. If the top titles, skill distributions, and data-role patterns were obviously implausible, that would signal a problem in the cleaning pipeline.
 
@@ -208,28 +211,31 @@ These summaries directly support the broader project objective. They show what e
 ### 2.2 University Data Cleaning
 
 #### 2.2.1 University Course Cleaning Methodology
+The notebook follows a structured data engineering workflow to transform raw, semi-structured course data into an analysis-ready dataset. It begins by ingesting module data from multiple universities and standardising heterogeneous schemas into a unified tabular format. Textual fields such as titles, descriptions, and departments are cleaned and normalised, after which the dataset is filtered to retain undergraduate-relevant modules. Noisy or low-quality records are removed, and the cleaned text is prepared for downstream NLP tasks such as skill extraction. The final dataset is persisted as a structured output, with validation checks performed to ensure plausibility. This workflow separates data preparation from analysis while maintaining transparency within a single notebook.
 
-- Add a matching methodology subsection for `data_cleaning_university_merged.ipynb`.
-- Describe the course-side data sources:
-  - NUSMods API
-  - NTU scraper outputs and department mapping
-  - SUTD scraper outputs
-- Explain how module descriptions were cleaned and standardized.
-- Document the cleaned course schema:
-  - `code`
-  - `title`
-  - `department`
-  - `description`
-  - `university`
-  - skill-related fields stored in the cleaned PKL
-- Explain how module-side skills were produced in the notebook:
-  - `skills_embedding`
-  - `hard_skills`
-  - `soft_skills`
-- Add university-side data-quality issues:
-  - missing descriptions from NTU and SUTD
-  - uneven metadata richness across universities
-  - department or faculty inconsistencies
+#### 2.2.2 Project-Wide Pipeline Overview
+At a system level, this notebook forms part of a broader end-to-end pipeline. The process spans raw module data acquisition (from NUS, NTU, and SUTD), preprocessing and scraping, notebook-based cleaning, and construction of a unified dataset. This dataset feeds into skill extraction and canonical skill mapping, which are then aligned with job-side skill demand for downstream analytics such as curriculum–labour market comparison. The cleaned dataset serves as the source of truth for all subsequent workflows, ensuring consistency across the project.
+
+#### 2.2.3 Data Collection and Ingestion
+Module data is loaded from multiple sources and consolidated into a unified structure despite differences in schemas and formatting. NUS data is obtained via API, while NTU and SUTD data are sourced from scraper outputs, with NTU department codes mapped to full names using an external lookup table. Key fields—module code, title, description, and department—are extracted and standardised, and a university column is added to preserve provenance.
+
+#### 2.2.4 Text Cleaning and Normalisation
+Given the inconsistency of module descriptions, extensive text cleaning is applied. This includes lowercasing, spelling standardisation, HTML removal using BeautifulSoup, elimination of invalid Unicode characters, and whitespace normalisation. These steps ensure that textual data reflects meaningful content rather than formatting artefacts, which is critical for downstream NLP tasks.
+
+#### 2.2.5 Targeted Filtering for Undergraduate Modules
+To align with project objectives, the dataset is filtered to retain only undergraduate-relevant modules. Modules with very short descriptions are removed, along with those from irrelevant faculties and postgraduate programmes identified through title and description cues. Rows with missing essential fields are also excluded. This ensures that the dataset reflects curriculum content relevant to entry-level job demand.
+
+#### 2.2.6 Preparation for Skill Extraction
+The cleaned dataset is further processed for NLP-based skill extraction. Descriptions are tokenised into manageable units, word counts are computed robustly, and text is normalised to reduce variation. This preprocessing ensures compatibility with embedding-based models such as MiniLM, preserving semantic signals while minimising noise.
+
+#### 2.2.7 Schema Standardisation Across Universities
+Finally, the notebook harmonises data across universities by standardising column names, department representations, and text formats. The dataset adopts a consistent schema (code, title, department, description, university, and skill-related fields) and is saved as a .pkl file. Intermediate artifacts are removed, producing a compact, stable dataset suitable for downstream analysis.
+
+After cleaning, the final university dataset contains:
+
+- **'NUS': 8499 rows of modules**
+- **'NTU': 1817 rows of modules**
+- **'SUTD': 199 rows of module**
 
 ## 3. General Pipeline
 
