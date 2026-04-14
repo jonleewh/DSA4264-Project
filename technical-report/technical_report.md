@@ -350,18 +350,18 @@ Apart from the STEM-specific scoping and module extraction, the `stem_test` pipe
 
 ### 4.2 Results
 
-On the STEM-specific dataset of 4,431 modules, the pipeline left **** empty modules, achieving a **top-1 overlap rate of xxx** and an **average top-1 score of xxx**, compared with **xxx** and **xxx** for the experimental pipeline for all modules.
+On the STEM-specific dataset of 4,431 modules, the pipeline left **** empty modules, achieving a **top-1 overlap rate of 0.9998** and an **average top-1 score of 0.1571**, compared with **xxx** and **xxx** for the experimental pipeline for all modules.
 
 Table 3 summarizes the results for the STEM dataset.
 
-| Metric | Baseline | Experimental |
+| Metric | Baseline | STEM Pipeline |
 |---|---:|---:|
-| Modules evaluated | 10,507 | 10,507 |
-| Empty modules | 136 | 2,819 |
-| Non-empty modules | 10,371 | 7,688 |
-| Top-1 overlap rate | 0.7391 | 0.5775 |
-| Average top-1 score | 0.0647 | 0.0410 |
-| Avg canonical skills per non-empty module | 4.537 | 2.419 |
+| Modules evaluated | 10,507 | 4,431 |
+| Empty modules | 136 | 19 |
+| Non-empty modules | 10,371 | 4,412 |
+| Top-1 overlap rate | 0.7391 | 0.9998 |
+| Average top-1 score | 0.0647 | 0.1571 |
+| Avg canonical skills per non-empty module | 4.537 | 7.356 |
 
 Together, the table shows that the STEM pipeline is more robust, **with xxx.**
 
@@ -433,26 +433,23 @@ These do not undermine the core cleaning pipeline, but they are important if the
 
 ### 6.1 Limitations, Biases, and Ethical Considerations
 
-Several limitations should be stated explicitly.
+Our jobs data is limited in scope and timeframe. We only used job descriptions from **MyCareersFuture** over **one week**. Hence, our findings may be limited in relevance; changes in labour-market trends over time may reduce comparability if the framework is not periodically refreshed.
 
-First, the graduate filter is rule-based. Using `minimum_years_experience` in `{0,1}` is practical, but some graduate-suitable jobs may require 2 years, while some 0-1 year roles may still be unsuitable for typical undergraduates.
+Additionally, the graduate filter is rule-based. Using `minimum_years_experience` in `{0,1}` is practical, but employers may wronglyindicate the filter wrongly graduate-suitable jobs may require 2 years, while some 0-1 year roles may still be unsuitable for typical undergraduates. Besides, human errors from employers in wrongly selecting 0-1 year roles may exist.
 
-Second, postgraduate-role exclusion relies on keyword patterns in titles and descriptions. This improves precision, but it may still generate both false positives and false negatives.
+Also, excluding postgraduate roles rely on keyword patterns in titles and descriptions. While this improves precision, it may generate false postiives and false negatives.
 
-Third, skill extraction depends on employer-supplied structured skill fields. Employers vary widely in how carefully they populate these fields. As a result, common soft skills may be overrepresented, while some technical competencies may be missing from the structured list even when present in the description text.
+Our skill extraction depends on employer-supplied structured skill fields. Employers vary widely in how carefully they populate these fields. Hence, common soft skills may be overrepresented, while some technical competencies may be missing from the structured list even when present in the description text.
 
-Fourth, the data-role subset is small at 29 postings. It is useful for illustration, but not yet strong enough for high-confidence sectoral conclusions.
+The data-role subset is small at 29 postings. It is useful for illustration, but not yet strong enough for high-confidence sectoral conclusions.
 
 Fifth, the notebook supports public-sector analysis but does not by itself resolve fairness concerns. For example, if certain industries systematically omit salary data or structured skills, the cleaned dataset may underrepresent them in downstream comparisons. Policymakers should treat the outputs as directional evidence rather than ground truth.
 
-Additional limitations to document:
+For module descriptions, we focused on three universities as these datasets were most accessible. We extracted skills purely based on generic module descriptions, which may not fully capture teaching quality, learning outcomes or pedagogical depth. Additionally, our STEM scope classification is rule-based and inherits the limitations of department-level labeling.
 
-- The university-side dataset may not fully capture teaching quality, learning outcomes, or pedagogical depth; it mainly captures textual module descriptions and extracted skills.
-- Canonical skill mapping introduces its own abstraction layer, which may merge distinct competencies or preserve distinctions that are not meaningful to employers.
-- Alignment scores are similarity-based and should not be interpreted as causal measures of programme effectiveness.
-- The STEM scope classification is rule-based and inherits the limitations of department-level labeling.
-- Changes in labour-market language over time may reduce comparability if the framework is not periodically refreshed.
-- Job data was only taken from **MyCareersFuture**, and doesn't include other job descriptions from portals like Careers@Gov and LinkedIn.
+Canonical skill mapping introduces its own abstraction layer, which may merge distinct competencies or preserve distinctions that are not meaningful to employers.
+
+Module-job alignment scores are similarity-based and should not be interpreted as causal measures of programme effectiveness.
 
 
 Ethical considerations to add:
@@ -472,6 +469,7 @@ Ethical considerations to add:
   - add stronger evaluation metrics for baseline versus experimental skill extraction
   - extend analysis to trends over time or sector-specific substudies
   - incorporate more universities or broader education pathways if relevant
+
 - Include future engineering improvements:
   - automated tests
   - versioned reference artifacts
