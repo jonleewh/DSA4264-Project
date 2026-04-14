@@ -15,93 +15,80 @@ NTU_OUT = DEFAULT_REFERENCE_DIR / "ntu_stem_classification_v1.json"
 SUTD_OUT = DEFAULT_REFERENCE_DIR / "sutd_stem_classification_v1.json"
 
 
-STEM_KEYWORDS = [
-    "engineering",
-    "engineer",
-    "computer",
-    "computing",
-    "information systems",
-    "analytics",
-    "operations",
-    "mathematics",
-    "math",
-    "statistics",
-    "statistical",
-    "physics",
-    "chemistry",
-    "biological",
-    "biology",
-    "biochemistry",
-    "microbiology",
-    "immunology",
-    "anatomy",
-    "physiology",
-    "materials",
-    "medicine",
-    "medical",
-    "dentistry",
-    "pharmacy",
-    "science",
-    "public health",
-    "architecture",
-    "built environment",
-]
-
-NON_STEM_KEYWORDS = [
-    "business",
-    "accounting",
-    "accountancy",
-    "finance",
-    "law",
-    "arts",
-    "social science",
-    "humanities",
-    "history",
-    "philosophy",
-    "language",
-    "linguistics",
-    "music",
-    "conservatory",
-    "sociology",
-    "psychology",
-    "political",
-    "policy",
-    "marketing",
-    "communications",
-    "communication",
-    "media",
-    "real estate",
-    "management",
-    "economics",
-]
-
-
-NUS_FACULTY_OVERRIDES = {
-    "College of Design and Engineering": "clear_stem",
-    "Computing": "clear_stem",
-    "Dentistry": "clear_stem",
-    "NUS-ISS": "clear_stem",
-    "SSH School of Public Health": "clear_stem",
-    "Science": "clear_stem",
-    "Yong Loo Lin Sch of Medicine": "clear_stem",
-    "Arts and Social Science": "clear_non_stem",
-    "Law": "clear_non_stem",
-    "YST Conservatory of Music": "clear_non_stem",
-    "NUS Business School": "unclear_or_mixed",
-    "Yale-NUS College": "unclear_or_mixed",
-    "Residential College": "unclear_or_mixed",
+NUS_CLEAR_STEM_FACULTIES = {
+    "College of Design and Engineering",
+    "Computing",
+    "Dentistry",
+    "NUS-ISS",
+    "Science",
+    "Yong Loo Lin Sch of Medicine",
 }
 
-NUS_DEPARTMENT_OVERRIDES = {
-    "Economics": "clear_stem",
-    "Analytics and Operations": "clear_stem",
-    "Yale-NUS College": "unclear_or_mixed",
+NUS_CLEAR_STEM_DEPARTMENTS = {
+    "Accounting",
+    "Alice Lee Center for Nursing Studies",
+    "Analytics and Operations",
+    "Anatomy",
+    "Architecture",
+    "Biochemistry",
+    "Biological Sciences",
+    "Biomedical Engineering",
+    "Built Environment",
+    "Chemical and Biomolecular Engineering",
+    "Chemistry",
+    "Civil and Environmental Engineering",
+    "Computer Science",
+    "Computing and Engineering Programme",
+    "Electrical and Computer Engineering",
+    "Engineering Science Programme",
+    "EngrgDesignandInnovationCentre",
+    "Food Science and Technology",
+    "Industrial Design",
+    "Industrial Systems Engineering and Management",
+    "Information Systems and Analytics",
+    "Materials Science and Engineering",
+    "Mathematics",
+    "Mechanical Engineering",
+    "Microbiology and Immunology",
+    "NUS-ISS",
+    "Pathology",
+    "Pharmacology",
+    "PharmacyandPharmaceuticalScience",
+    "Physics",
+    "Physiology",
+    "Statistics and Data Science",
 }
 
-NTU_DEPARTMENT_OVERRIDES = {
-    "Economics": "unclear_or_mixed",
-    "Psychology": "unclear_or_mixed",
-    "National Institute of Education": "unclear_or_mixed",
+NTU_CLEAR_STEM_DEPARTMENTS = {
+    "Aerospace Engineering (MAE)",
+    "Bachelor of Applied Computing in Finance (CE)",
+    "Bioengineering (CBE)",
+    "Biological Sciences (general)",
+    "Biological Sciences Programme",
+    "Biomedical Sciences (Biological Sciences)",
+    "Chemistry (CBE)",
+    "Chinese Medicine (Biological Sciences)",
+    "Computer Science (Computer Engineering track, SCSE)",
+    "Environmental Engineering (CEE)",
+    "Information Engineering & Media (EEE)",
+    "Physics (SPMS)",
+    "Programme under Civil Engineering",
+    "Renaissance Engineering Programme",
+    "Robotics (MAE)",
+    "School of Biological Sciences",
+    "School of Chemistry, Chemical Engineering & Biotechnology",
+    "School of Civil and Environmental Engineering",
+    "School of Civil and Environmental Engineering (CEE)",
+    "School of Computer Science and Engineering (SCSE)",
+    "School of Electrical and Electronic Engineering",
+    "School of Materials Science and Engineering (College of Engineering)",
+    "School of Mechanical and Aerospace Engineering",
+    "School of Physical & Mathematical Sciences",
+    "School of Physical and Mathematical Sciences (College of Science)",
+}
+
+SUTD_UNCLEAR_DEPARTMENTS = {
+    "Humanities, Arts and Social Sciences",
 }
 
 
@@ -150,32 +137,33 @@ def _extract_unique_values(rows: list[dict[str, Any]], key: str) -> list[str]:
     return sorted(out)
 
 
-def _score_keywords(label: str, keywords: list[str]) -> int:
-    text = label.lower()
-    return sum(1 for kw in keywords if kw in text)
-
-
-def _bucket_from_keywords(label: str) -> str:
-    stem_score = _score_keywords(label, STEM_KEYWORDS)
-    non_stem_score = _score_keywords(label, NON_STEM_KEYWORDS)
-    if stem_score > 0 and non_stem_score == 0:
-        return "clear_stem"
-    if non_stem_score > 0 and stem_score == 0:
-        return "clear_non_stem"
-    return "unclear_or_mixed"
-
-
-def _classify_values(values: list[str], overrides: dict[str, str] | None = None) -> dict[str, list[str]]:
+def _classify_values(
+    values: list[str],
+    clear_stem: set[str] | None = None,
+    clear_non_stem: set[str] | None = None,
+    unclear_or_mixed: set[str] | None = None,
+    default_bucket: str = "unclear_or_mixed",
+    include_clear_non_stem: bool = False,
+) -> dict[str, list[str]]:
     buckets = {
         "clear_stem": [],
-        "clear_non_stem": [],
         "unclear_or_mixed": [],
     }
+    if include_clear_non_stem:
+        buckets["clear_non_stem"] = []
+    clear_stem = clear_stem or set()
+    clear_non_stem = clear_non_stem or set()
+    unclear_or_mixed = unclear_or_mixed or set()
+
     for value in values:
-        if overrides and value in overrides:
-            bucket = overrides[value]
+        if value in clear_stem:
+            bucket = "clear_stem"
+        elif include_clear_non_stem and value in clear_non_stem:
+            bucket = "clear_non_stem"
+        elif value in unclear_or_mixed:
+            bucket = "unclear_or_mixed"
         else:
-            bucket = _bucket_from_keywords(value)
+            bucket = default_bucket
         buckets[bucket].append(value)
     for k in buckets:
         buckets[k] = sorted(set(buckets[k]))
@@ -188,6 +176,7 @@ def _write_json(path: Path, obj: dict[str, Any]) -> None:
 
 
 def build_nus(nus_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    faculties = _extract_unique_values(nus_rows, "faculty")
     departments = _extract_unique_values(nus_rows, "department")
     return {
         "version": "v1",
@@ -195,19 +184,25 @@ def build_nus(nus_rows: list[dict[str, Any]]) -> dict[str, Any]:
         "notes": [
             "Auto-generated by src/stem_test/stem_1_generate_scope_classifications.py.",
             "Built from notebook-cleaned combined course PKL rows filtered to NUS.",
-            "NUS faculty buckets are left empty because the cleaned PKL does not preserve a faculty column.",
-            "Classification uses keyword-based rules plus explicit overrides for known ambiguous departments.",
+            "NUS classification uses explicit rules.",
+            "Faculties and departments listed in clear_stem are treated as STEM.",
+            "All remaining faculties/departments default to unclear_or_mixed.",
         ],
-        "faculties": {
-            "clear_stem": [],
-            "clear_non_stem": [],
-            "unclear_or_mixed": [],
-        },
-        "departments": _classify_values(departments, overrides=NUS_DEPARTMENT_OVERRIDES),
+        "faculties": _classify_values(
+            faculties,
+            clear_stem=NUS_CLEAR_STEM_FACULTIES,
+            default_bucket="unclear_or_mixed",
+        ),
+        "departments": _classify_values(
+            departments,
+            clear_stem=NUS_CLEAR_STEM_DEPARTMENTS,
+            default_bucket="unclear_or_mixed",
+        ),
     }
 
 
 def build_ntu(ntu_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    faculties = _extract_unique_values(ntu_rows, "faculty")
     departments = _extract_unique_values(ntu_rows, "department")
     return {
         "version": "v1",
@@ -215,15 +210,32 @@ def build_ntu(ntu_rows: list[dict[str, Any]]) -> dict[str, Any]:
         "notes": [
             "Auto-generated by src/stem_test/stem_1_generate_scope_classifications.py.",
             "Built from notebook-cleaned combined course PKL rows filtered to NTU.",
-            "Department-only classification for NTU.",
+            "NTU classification uses explicit rules.",
+            "Departments listed in clear_stem are treated as STEM.",
+            "All remaining faculties/departments default to unclear_or_mixed.",
         ],
-        "departments": _classify_values(departments, overrides=NTU_DEPARTMENT_OVERRIDES),
+        "faculties": _classify_values(
+            faculties,
+            clear_stem=set(),
+            default_bucket="unclear_or_mixed",
+        ),
+        "departments": _classify_values(
+            departments,
+            clear_stem=NTU_CLEAR_STEM_DEPARTMENTS,
+            default_bucket="unclear_or_mixed",
+        ),
     }
 
 
 def build_sutd(sutd_rows: list[dict[str, Any]]) -> dict[str, Any]:
     departments = _extract_unique_values(sutd_rows, "department")
-    buckets = _classify_values(departments)
+    clear_stem_departments = {d for d in departments if d not in SUTD_UNCLEAR_DEPARTMENTS}
+    buckets = _classify_values(
+        departments,
+        clear_stem=clear_stem_departments,
+        unclear_or_mixed=SUTD_UNCLEAR_DEPARTMENTS,
+        default_bucket="unclear_or_mixed",
+    )
     if not departments:
         notes = [
             "Auto-generated by src/stem_test/stem_1_generate_scope_classifications.py.",
@@ -235,7 +247,9 @@ def build_sutd(sutd_rows: list[dict[str, Any]]) -> dict[str, Any]:
         notes = [
             "Auto-generated by src/stem_test/stem_1_generate_scope_classifications.py.",
             "Built from notebook-cleaned combined course PKL rows filtered to SUTD.",
-            "Department-only classification for SUTD.",
+            "SUTD classification uses explicit rules.",
+            "All departments are treated as STEM except Humanities, Arts and Social Sciences.",
+            "Humanities, Arts and Social Sciences is set to unclear_or_mixed.",
         ]
 
     return {

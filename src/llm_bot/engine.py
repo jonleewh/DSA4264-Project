@@ -13,9 +13,9 @@ import pandas as pd
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 JOBS_PATH = PROJECT_ROOT / "data" / "cleaned_data" / "jobs_cleaned.pkl"
-STEM_FULL_DIR = PROJECT_ROOT / "data" / "stem_full"
-STEM_MODULE_CANONICAL_PATH = STEM_FULL_DIR / "module_skills_canonical_stem.jsonl"
-STEM_JOB_CANONICAL_PATH = STEM_FULL_DIR / "job_skills_canonical_stem.jsonl"
+BASELINE_DATA_DIR = PROJECT_ROOT / "data" / "test"
+MODULE_CANONICAL_PATH = BASELINE_DATA_DIR / "module_skills_canonical.jsonl"
+JOB_CANONICAL_PATH = BASELINE_DATA_DIR / "job_skills_canonical.jsonl"
 
 STOPWORDS = {
     "a",
@@ -307,40 +307,40 @@ class LocalJobCourseBot:
     def __init__(
         self,
         jobs_path: Path = JOBS_PATH,
-        stem_module_canonical_path: Path = STEM_MODULE_CANONICAL_PATH,
-        stem_job_canonical_path: Path = STEM_JOB_CANONICAL_PATH,
+        module_canonical_path: Path = MODULE_CANONICAL_PATH,
+        job_canonical_path: Path = JOB_CANONICAL_PATH,
     ):
         self.jobs_df = pd.read_pickle(jobs_path)
         self.jobs = self._prepare_jobs(self.jobs_df)
 
-        self.stem_module_canonical_path = stem_module_canonical_path
-        self.stem_job_canonical_path = stem_job_canonical_path
-        self.stem_data_status = self._load_stem_data()
+        self.module_canonical_path = module_canonical_path
+        self.job_canonical_path = job_canonical_path
+        self.canonical_data_status = self._load_canonical_data()
         self.skill_vocabulary = self._build_skill_vocabulary()
 
-    def _load_stem_data(self) -> dict[str, Any]:
+    def _load_canonical_data(self) -> dict[str, Any]:
         missing = [
             str(path.relative_to(PROJECT_ROOT))
-            for path in [self.stem_module_canonical_path, self.stem_job_canonical_path]
+            for path in [self.module_canonical_path, self.job_canonical_path]
             if not path.exists()
         ]
         if missing:
-            self.stem_modules = []
-            self.stem_jobs_canonical = []
-            self.stem_jobs_by_post_id = {}
+            self.modules_canonical = []
+            self.jobs_canonical = []
+            self.jobs_canonical_by_post_id = {}
             return {
                 "available": False,
                 "message": (
-                    "STEM module recommendations are disabled because the stem_test pipeline "
-                    "outputs are missing."
+                    "Module recommendations are disabled because the baseline canonical "
+                    "pipeline outputs are missing."
                 ),
                 "missing_paths": missing,
             }
 
-        module_rows = load_jsonl(self.stem_module_canonical_path)
-        job_rows = load_jsonl(self.stem_job_canonical_path)
+        module_rows = load_jsonl(self.module_canonical_path)
+        job_rows = load_jsonl(self.job_canonical_path)
 
-        self.stem_modules = []
+        self.modules_canonical = []
         for row in module_rows:
             skills = sorted(
                 {
@@ -349,7 +349,7 @@ class LocalJobCourseBot:
                     if normalize_text(skill)
                 }
             )
-            self.stem_modules.append(
+            self.modules_canonical.append(
                 {
                     "id": str(row.get("id") or row.get("module_id") or "").strip(),
                     "source": str(row.get("source") or "").strip(),
@@ -362,8 +362,8 @@ class LocalJobCourseBot:
                 }
             )
 
-        self.stem_jobs_canonical = []
-        self.stem_jobs_by_post_id = {}
+        self.jobs_canonical = []
+        self.jobs_canonical_by_post_id = {}
         for row in job_rows:
             post_id = str(row.get("job_post_id") or "").strip()
             skills = sorted(
@@ -379,14 +379,14 @@ class LocalJobCourseBot:
                 "ssoc_3d_title": str(row.get("ssoc_3d_title") or "").strip(),
                 "canonical_skills": skills,
             }
-            self.stem_jobs_canonical.append(job_row)
+            self.jobs_canonical.append(job_row)
             if post_id:
-                self.stem_jobs_by_post_id[post_id] = job_row
+                self.jobs_canonical_by_post_id[post_id] = job_row
 
         return {
             "available": True,
             "message": (
-                "Using stem_test canonical skill outputs for STEM-only module recommendations."
+                "Using baseline canonical skill outputs for all-subject university module recommendations."
             ),
             "missing_paths": [],
         }
@@ -395,10 +395,10 @@ class LocalJobCourseBot:
         vocab = set()
         for job in self.jobs:
             vocab.update(job["skills"])
-        if self.stem_data_status["available"]:
-            for module in self.stem_modules:
+        if self.canonical_data_status["available"]:
+            for module in self.modules_canonical:
                 vocab.update(module["canonical_skills"])
-            for job in self.stem_jobs_canonical:
+            for job in self.jobs_canonical:
                 vocab.update(job["canonical_skills"])
         return sorted(skill for skill in vocab if skill)
 
@@ -593,7 +593,7 @@ class LocalJobCourseBot:
         counter: Counter[str] = Counter()
         matched_post_ids = []
         for rank, job in enumerate(ranked_jobs[:top_k_jobs], start=1):
-            canonical_row = self.stem_jobs_by_post_id.get(job["uuid"])
+            canonical_row = self.jobs_canonical_by_post_id.get(job["uuid"])
             if not canonical_row:
                 continue
             matched_post_ids.append(job["uuid"])
@@ -606,6 +606,8 @@ class LocalJobCourseBot:
         if skill in module["skill_counter"]:
             return True
         module_text = f"{module['title_norm']} {' '.join(module['canonical_skills'])}"
+        if skill and skill in module_text:
+            return True
         for alias in QUERY_SKILL_ALIASES.get(skill, set()):
             if alias in module_text:
                 return True
@@ -618,11 +620,11 @@ class LocalJobCourseBot:
         limit: int = 5,
         top_k_job_skills: int = 10,
     ) -> tuple[list[dict], dict[str, Any]]:
-        if not self.stem_data_status["available"]:
+        if not self.canonical_data_status["available"]:
             return [], {
                 "available": False,
-                "message": self.stem_data_status["message"],
-                "missing_paths": self.stem_data_status["missing_paths"],
+                "message": self.canonical_data_status["message"],
+                "missing_paths": self.canonical_data_status["missing_paths"],
                 "canonical_job_match_count": 0,
             }
 
@@ -631,8 +633,8 @@ class LocalJobCourseBot:
             return [], {
                 "available": False,
                 "message": (
-                    "STEM outputs are present, but none of the matched job ads could be linked "
-                    "to canonical stem_test job rows."
+                    "Baseline canonical outputs are present, but none of the matched job ads could be linked "
+                    "to canonical job rows."
                 ),
                 "missing_paths": [],
                 "canonical_job_match_count": 0,
@@ -641,7 +643,7 @@ class LocalJobCourseBot:
         recommendations = []
         role_tokens = set(intent.non_skill_tokens) if intent else set()
         query_skills = sorted(intent.skills) if intent else []
-        for module in self.stem_modules:
+        for module in self.modules_canonical:
             if intent and intent.school_filter and module["source"] != intent.school_filter:
                 continue
             module_counter = module["skill_counter"]
@@ -706,11 +708,11 @@ class LocalJobCourseBot:
         )
         return recommendations[:limit], {
             "available": True,
-                "message": self.stem_data_status["message"],
-                "missing_paths": [],
-                "canonical_job_match_count": len(matched_post_ids),
-                "school_filter": intent.school_filter if intent else None,
-            }
+            "message": self.canonical_data_status["message"],
+            "missing_paths": [],
+            "canonical_job_match_count": len(matched_post_ids),
+            "school_filter": intent.school_filter if intent else None,
+        }
 
     def _build_summary(
         self,
@@ -718,7 +720,7 @@ class LocalJobCourseBot:
         all_ranked_jobs: list[dict],
         top_jobs: list[dict],
         top_modules: list[dict],
-        stem_status: dict[str, Any],
+        recommendation_status: dict[str, Any],
     ) -> str:
         if not top_jobs:
             return (
@@ -760,19 +762,19 @@ class LocalJobCourseBot:
                 )
             module_reason = "; ".join(reasons) if reasons else "it has the strongest canonical overlap"
             sentence += (
-                f" The top STEM module recommendation is {best_module['id']} {best_module['title']} "
+                f" The top university module recommendation is {best_module['id']} {best_module['title']} "
                 f"because {module_reason}."
             )
             if intent.school_filter:
                 sentence += f" I restricted module recommendations to {intent.school_filter}."
-        elif not stem_status["available"]:
-            sentence += f" {stem_status['message']}"
+        elif not recommendation_status["available"]:
+            sentence += f" {recommendation_status['message']}"
         return sentence
 
     def run_query(self, query: str, top_job_limit: int = 5, top_module_limit: int = 5) -> dict:
         intent = self.interpret_query(query)
         top_jobs, all_ranked_jobs = self.search_jobs(intent, limit=top_job_limit)
-        top_modules, stem_status = self.recommend_modules(
+        top_modules, recommendation_status = self.recommend_modules(
             all_ranked_jobs,
             intent=intent,
             limit=top_module_limit,
@@ -790,7 +792,13 @@ class LocalJobCourseBot:
                 "salary_max": intent.salary_max,
                 "experience_max": intent.experience_max,
             },
-            "summary": self._build_summary(intent, all_ranked_jobs, top_jobs, top_modules, stem_status),
+            "summary": self._build_summary(
+                intent,
+                all_ranked_jobs,
+                top_jobs,
+                top_modules,
+                recommendation_status,
+            ),
             "stats": {
                 "matched_job_count": len(all_ranked_jobs),
                 "returned_job_count": len(top_jobs),
@@ -800,7 +808,7 @@ class LocalJobCourseBot:
                     for skill, weight in top_skill_profile
                 ],
             },
-            "stem_status": stem_status,
+            "recommendation_status": recommendation_status,
             "jobs": top_jobs,
             "modules": top_modules,
         }

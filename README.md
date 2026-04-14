@@ -36,10 +36,10 @@ Place these files in the project before running the pipelines:
 
 3. **Create `.env`**
 
-Create a `.env` file in the repository root with:
+Create a `.env` file in the repository root and include the required API key / endpoint configuration for the NUS data source:
 
 ```bash
-nus_api="https://api.nusmods.com/v2/2025-2026/moduleInfo.json"
+nus_api="<your_api_value_here>"
 ```
 
 4. **Create a virtual environment**  

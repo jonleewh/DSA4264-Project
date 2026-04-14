@@ -4,6 +4,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pandas as pd
 
 
@@ -12,6 +13,7 @@ REFERENCE_DIR = PROJECT_ROOT / "data" / "reference"
 DEFAULT_COURSES_INPUT = PROJECT_ROOT / "data" / "cleaned_data" / "combined_courses_cleaned.pkl"
 DEFAULT_PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
 DEFAULT_STEM_OUTPUT = PROJECT_ROOT / "data" / "cleaned_data" / "cleaned_module_rows_STEM.jsonl"
+DEFAULT_NON_STEM_OUTPUT = PROJECT_ROOT / "data" / "cleaned_data" / "cleaned_module_rows_non_STEM.jsonl"
 
 NUS_FILE = REFERENCE_DIR / "nus_stem_classification_v1.json"
 NTU_FILE = REFERENCE_DIR / "ntu_stem_classification_v1.json"
@@ -32,14 +34,32 @@ def _to_set(values: list[str] | None) -> set[str]:
     return {_norm(v) for v in (values or []) if _norm(v)}
 
 
-QUANT_STRONG_PATTERNS = [
-    r"\bstatistic(s|al)?\b",
+STEM_STRONG_PATTERNS = [
+    r"\bmathematics?\b",
+    r"\bmath\b",
+    r"\bscience\b",
+    r"\bscientific\b",
+    r"\bengineering\b",
+    r"\btechnology\b",
+    r"\bcoding\b",
+    r"\bcode\b",
+    r"\bprogramming\b",
+    r"\bcomputer\b",
+    r"\bcomputation(al)?\b",
+    r"\balgorithm(s|ic)?\b",
+    r"\bdata structures?\b",
+    r"\bsoftware\b",
+    r"\bpython\b",
+    r"\br programming\b|\bprogramming in r\b|\blanguage r\b",
+    r"\bsql\b",
+    r"\bstatistics?\b",
+    r"\bstatistical\b",
     r"\beconometric(s)?\b",
     r"\bregression\b",
     r"\bprobability\b",
     r"\bstochastic\b",
     r"\btime series\b",
-    r"\boptimization|optimisation\b",
+    r"\boptimization\b|\boptimisation\b",
     r"\boperations research\b",
     r"\blinear algebra\b",
     r"\bcalculus\b",
@@ -50,18 +70,25 @@ QUANT_STRONG_PATTERNS = [
     r"\bdata mining\b",
     r"\bforecast(ing)?\b",
     r"\bsimulation\b",
-    r"\balgorithm(s|ic)?\b",
-    r"\bpython\b",
-    r"\br programming\b|\bprogramming in r\b|\blanguage r\b",
-    r"\bsql\b",
-    r"\bprogramming\b",
+    r"\bphysics?\b",
+    r"\bchemistry\b",
+    r"\bmolecular biology\b",
+    r"\bcell biology\b",
+    r"\bgenetics?\b",
+    r"\bbiotechnology\b",
+    r"\bbiomedical\b",
+    r"\bbioinformatics\b",
+    r"\banatomy\b",
+    r"\bphysiology\b",
+    r"\bbiochemistry\b",
+    r"\bmicrobiology\b",
+    r"\bimmunology\b",
 ]
 
-QUANT_WEAK_PATTERNS = [
+STEM_WEAK_PATTERNS = [
     r"\bquantitative\b",
     r"\banalytics?\b",
     r"\bmathematical model(l)?ing\b",
-    r"\bcomputational\b",
     r"\bempirical\b",
     r"\bdata analysis\b",
 ]
@@ -75,38 +102,197 @@ QUANT_BLOCKLIST_PATTERNS = [
     r"\bphilosophical analysis\b",
 ]
 
-EXCLUDED_MODULE_PATTERNS: list[tuple[str, str]] = [
-    (
-        "excluded_future_ready_graduates_module",
-        r"\bcent(re|er) for future[- ]ready graduates\b|\bcfrg\b",
-    ),
+NON_STEM_CONTEXT_PATTERNS = [
+    r"\bsociolog(y|ical)\b",
+    r"\banthropolog(y|ical)\b",
+    r"\bcultural\b",
+    r"\bethnograph(y|ic)\b",
+    r"\bhistorical\b",
+    r"\bhistory\b",
+    r"\bphilosoph(y|ical)\b",
+    r"\bliterature\b",
+    r"\bart(s|istic)?\b",
+    r"\bmortuary\b",
+    r"\bfunerar(y|ies)\b",
+    r"\britual(s)?\b",
+]
+
+STEM_PROTOTYPE_SENTENCES = [
+    "This module teaches programming, algorithms, and computational problem solving.",
+    "Students build predictive models using statistics, machine learning, and data analysis.",
+    "The course covers experimental design, scientific methods, and quantitative reasoning.",
+    "Learners apply linear algebra, calculus, and optimization in engineering systems.",
+    "This class studies molecular biology, genetics, and biochemical laboratory techniques.",
+    "The module includes software engineering, databases, and computer systems.",
+    "Students write code to simulate physical systems and evaluate model accuracy.",
+    "The curriculum focuses on probability, inference, and regression for real datasets.",
+    "Laboratory sessions train students to collect, measure, and analyze scientific observations.",
+    "The course develops numerical methods for solving differential equations in engineering.",
+    # Ambiguous STEM-leaning examples
+    "Students discuss ethics in AI while implementing and testing machine learning pipelines.",
+    "The module examines technology policy through quantitative analysis of digital platform data.",
+]
+
+NON_STEM_PROTOTYPE_SENTENCES = [
+    "This module examines culture, history, and social theory through critical interpretation.",
+    "Students discuss philosophy, ethics, and political thought using textual analysis.",
+    "The course focuses on literature, narrative methods, and close reading.",
+    "Learners study anthropological perspectives, ethnography, and social practices.",
+    "This class explores art history, media criticism, and cultural representation.",
+    "Students analyze historical documents to compare arguments across time periods.",
+    "The seminar evaluates political ideas through conceptual reasoning and debate.",
+    "The course interprets novels and films through critical and theoretical frameworks.",
+    "Learners conduct qualitative inquiry on identity, society, and cultural meaning.",
+    "The module studies religion and philosophy using interpretive reading and discussion.",
+    # Ambiguous non-STEM-leaning examples
+    "The class discusses the social impact of technology through critical essays and theory.",
+    "Students examine scientific modernity in literature and philosophy rather than technical methods.",
 ]
 
 
-def _exclusion_reason(
-    title: str | None,
-    description: str | None,
-    department: str | None = None,
-    faculty: str | None = None,
-) -> str | None:
-    text = " ".join(
-        [
-            _norm(title).lower(),
-            _norm(description).lower(),
-            _norm(department).lower(),
-            _norm(faculty).lower(),
-        ]
-    )
-    if not text.strip():
-        return None
-
-    for reason, pattern in EXCLUDED_MODULE_PATTERNS:
-        if re.search(pattern, text):
-            return reason
-    return None
+def _split_sentences(text: str | None) -> list[str]:
+    raw = _norm(text)
+    if not raw:
+        return []
+    parts = re.split(r"(?<=[.!?])\s+|\n+", raw)
+    return [p.strip() for p in parts if p and p.strip()]
 
 
-def _quant_signal_score(title: str | None, description: str | None) -> int:
+def _safe_l2_normalize(vectors: np.ndarray) -> np.ndarray:
+    if vectors.size == 0:
+        return vectors
+    norms = np.linalg.norm(vectors, axis=1, keepdims=True)
+    norms = np.where(norms == 0.0, 1.0, norms)
+    return vectors / norms
+
+
+class SentenceSemanticStemScorer:
+    """Sentence-level semantic scorer that contrasts STEM vs non-STEM meaning."""
+
+    def __init__(
+        self,
+        model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
+        margin: float = 0.04,
+    ):
+        self.model_name = model_name
+        self.margin = margin
+        self._model = None
+        self._stem_centroid: np.ndarray | None = None
+        self._non_stem_centroid: np.ndarray | None = None
+        self.available = False
+        self._initialize()
+
+    def _initialize(self):
+        try:
+            from sentence_transformers import SentenceTransformer
+        except Exception:
+            self.available = False
+            return
+
+        try:
+            self._model = SentenceTransformer(self.model_name, local_files_only=True)
+        except Exception:
+            try:
+                self._model = SentenceTransformer(self.model_name)
+            except Exception:
+                self.available = False
+                return
+
+        stem_vectors = self._model.encode(
+            STEM_PROTOTYPE_SENTENCES,
+            convert_to_numpy=True,
+            normalize_embeddings=True,
+            show_progress_bar=False,
+        )
+        non_stem_vectors = self._model.encode(
+            NON_STEM_PROTOTYPE_SENTENCES,
+            convert_to_numpy=True,
+            normalize_embeddings=True,
+            show_progress_bar=False,
+        )
+        self._stem_centroid = _safe_l2_normalize(np.mean(stem_vectors, axis=0, keepdims=True))[0]
+        self._non_stem_centroid = _safe_l2_normalize(np.mean(non_stem_vectors, axis=0, keepdims=True))[0]
+        self.available = True
+
+    def score_sentences(self, title: str | None, description: str | None) -> dict[str, float | int]:
+        if not self.available or self._model is None or self._stem_centroid is None or self._non_stem_centroid is None:
+            return {
+                "support_count": 0,
+                "oppose_count": 0,
+                "total_sentences": 0,
+                "avg_margin": 0.0,
+                "max_stem_similarity": 0.0,
+                "confidence": 0.0,
+            }
+
+        sentences = _split_sentences(title) + _split_sentences(description)
+        if not sentences:
+            return {
+                "support_count": 0,
+                "oppose_count": 0,
+                "total_sentences": 0,
+                "avg_margin": 0.0,
+                "max_stem_similarity": 0.0,
+                "confidence": 0.0,
+            }
+
+        vectors = self._model.encode(
+            sentences,
+            convert_to_numpy=True,
+            normalize_embeddings=True,
+            show_progress_bar=False,
+        )
+        stem_scores = np.dot(vectors, self._stem_centroid)
+        non_stem_scores = np.dot(vectors, self._non_stem_centroid)
+        margins = stem_scores - non_stem_scores
+
+        support_mask = margins >= self.margin
+        oppose_mask = margins <= -self.margin
+        support_count = int(np.sum(support_mask))
+        oppose_count = int(np.sum(oppose_mask))
+        confidence = support_count / (support_count + oppose_count + 1e-9)
+
+        return {
+            "support_count": support_count,
+            "oppose_count": oppose_count,
+            "total_sentences": int(len(sentences)),
+            "avg_margin": float(np.mean(margins)) if len(margins) else 0.0,
+            "max_stem_similarity": float(np.max(stem_scores)) if len(stem_scores) else 0.0,
+            "confidence": float(confidence),
+        }
+
+    def score_document(self, title: str | None, description: str | None) -> dict[str, float]:
+        if not self.available or self._model is None or self._stem_centroid is None or self._non_stem_centroid is None:
+            return {
+                "stem_similarity": 0.0,
+                "non_stem_similarity": 0.0,
+                "margin": 0.0,
+            }
+
+        text = " ".join([_norm(title), _norm(description)]).strip()
+        if not text:
+            return {
+                "stem_similarity": 0.0,
+                "non_stem_similarity": 0.0,
+                "margin": 0.0,
+            }
+
+        vector = self._model.encode(
+            [text],
+            convert_to_numpy=True,
+            normalize_embeddings=True,
+            show_progress_bar=False,
+        )[0]
+        stem_similarity = float(np.dot(vector, self._stem_centroid))
+        non_stem_similarity = float(np.dot(vector, self._non_stem_centroid))
+        return {
+            "stem_similarity": stem_similarity,
+            "non_stem_similarity": non_stem_similarity,
+            "margin": stem_similarity - non_stem_similarity,
+        }
+
+
+def _stem_signal_score(title: str | None, description: str | None) -> int:
     text = f"{_norm(title).lower()} {_norm(description).lower()}"
     if not text.strip():
         return 0
@@ -114,17 +300,38 @@ def _quant_signal_score(title: str | None, description: str | None) -> int:
         return 0
 
     score = 0
-    for pat in QUANT_STRONG_PATTERNS:
+    for pat in STEM_STRONG_PATTERNS:
         if re.search(pat, text):
             score += 2
-    for pat in QUANT_WEAK_PATTERNS:
+    for pat in STEM_WEAK_PATTERNS:
         if re.search(pat, text):
             score += 1
     return score
 
 
-def is_quantitative_module(title: str | None, description: str | None, min_score: int = 3) -> bool:
-    return _quant_signal_score(title, description) >= min_score
+def _strong_pattern_hits(title: str | None, description: str | None) -> int:
+    text = f"{_norm(title).lower()} {_norm(description).lower()}"
+    if not text.strip():
+        return 0
+    return sum(1 for pat in STEM_STRONG_PATTERNS if re.search(pat, text))
+
+
+def _has_non_stem_context(title: str | None, description: str | None) -> bool:
+    text = f"{_norm(title).lower()} {_norm(description).lower()}"
+    if not text.strip():
+        return False
+    return any(re.search(pat, text) for pat in NON_STEM_CONTEXT_PATTERNS)
+
+
+def is_stem_semantic_module(title: str | None, description: str | None, min_score: int = 2) -> bool:
+    """Keyword fallback only (semantic sentence encoder handled separately)."""
+    score = _stem_signal_score(title, description)
+    strong_hits = _strong_pattern_hits(title, description)
+    if score < min_score:
+        return False
+    if strong_hits <= 1 and _has_non_stem_context(title, description):
+        return False
+    return True
 
 
 class StemScopeClassifier:
@@ -132,14 +339,33 @@ class StemScopeClassifier:
 
     Buckets:
     - clear_stem
-    - clear_non_stem
     - unclear_or_mixed
     """
 
-    def __init__(self):
+    def __init__(
+        self,
+        semantic_model: str = "sentence-transformers/all-MiniLM-L6-v2",
+        sentence_vote_diff_threshold: int = 1,
+        semantic_margin: float = 0.04,
+        paragraph_stem_margin: float = 0.06,
+        paragraph_non_stem_margin: float = 0.02,
+        enable_semantic_encoder: bool = True,
+    ):
         self.nus = _load_json(NUS_FILE)
         self.ntu = _load_json(NTU_FILE)
         self.sutd = _load_json(SUTD_FILE)
+
+        self.sentence_vote_diff_threshold = sentence_vote_diff_threshold
+        self.paragraph_stem_margin = paragraph_stem_margin
+        self.paragraph_non_stem_margin = paragraph_non_stem_margin
+        self.semantic_encoder = (
+            SentenceSemanticStemScorer(
+                model_name=semantic_model,
+                margin=semantic_margin,
+            )
+            if enable_semantic_encoder
+            else None
+        )
 
         self.nus_fac = {
             "clear_stem": _to_set(self.nus.get("faculties", {}).get("clear_stem")),
@@ -171,20 +397,11 @@ class StemScopeClassifier:
         faculty: str | None = None,
         title: str | None = None,
         description: str | None = None,
-        quant_min_score: int = 3,
+        quant_min_score: int = 2,
     ) -> dict[str, str]:
         source_n = _norm(source).upper()
         dept_n = _norm(department)
         fac_n = _norm(faculty)
-
-        excluded_reason = _exclusion_reason(
-            title=title,
-            description=description,
-            department=department,
-            faculty=faculty,
-        )
-        if excluded_reason:
-            return {"scope_bucket": "clear_non_stem", "scope_reason": excluded_reason}
 
         base_bucket = "unclear_or_mixed"
         base_reason = "unknown_source"
@@ -216,16 +433,53 @@ class StemScopeClassifier:
             else:
                 base_bucket, base_reason = "unclear_or_mixed", "sutd_unlisted_or_mixed"
 
-        if base_bucket != "clear_stem" and is_quantitative_module(title, description, min_score=quant_min_score):
-            if base_bucket == "clear_non_stem":
-                return {"scope_bucket": "quant_non_stem", "scope_reason": "quant_semantic_override_non_stem"}
-            return {"scope_bucket": "quant_non_stem", "scope_reason": "quant_semantic_override_unclear"}
+        if base_bucket != "clear_stem":
+            if self.semantic_encoder is not None and self.semantic_encoder.available:
+                document_semantic = self.semantic_encoder.score_document(title, description)
+                if document_semantic["margin"] <= -self.paragraph_non_stem_margin:
+                    return {
+                        "scope_bucket": base_bucket,
+                        "scope_reason": "paragraph_semantic_non_stem_guard",
+                    }
+                if document_semantic["margin"] >= self.paragraph_stem_margin:
+                    return {
+                        "scope_bucket": "clear_stem",
+                        "scope_reason": "paragraph_semantic_stem_override",
+                    }
+
+                semantic_details = self.semantic_encoder.score_sentences(title, description)
+                if (
+                    document_semantic["margin"] >= 0.0
+                    and (semantic_details["support_count"] - semantic_details["oppose_count"])
+                    >= self.sentence_vote_diff_threshold
+                ):
+                    return {
+                        "scope_bucket": "clear_stem",
+                        "scope_reason": "stem_semantic_sentence_override",
+                    }
+
+            if is_stem_semantic_module(title, description, min_score=quant_min_score):
+                return {"scope_bucket": "clear_stem", "scope_reason": "stem_keyword_override"}
 
         return {"scope_bucket": base_bucket, "scope_reason": base_reason}
 
 
-def load_stem_scope_classifier() -> StemScopeClassifier:
-    return StemScopeClassifier()
+def load_stem_scope_classifier(
+    semantic_model: str = "sentence-transformers/all-MiniLM-L6-v2",
+    sentence_vote_diff_threshold: int = 1,
+    semantic_margin: float = 0.04,
+    paragraph_stem_margin: float = 0.06,
+    paragraph_non_stem_margin: float = 0.02,
+    enable_semantic_encoder: bool = True,
+) -> StemScopeClassifier:
+    return StemScopeClassifier(
+        semantic_model=semantic_model,
+        sentence_vote_diff_threshold=sentence_vote_diff_threshold,
+        semantic_margin=semantic_margin,
+        paragraph_stem_margin=paragraph_stem_margin,
+        paragraph_non_stem_margin=paragraph_non_stem_margin,
+        enable_semantic_encoder=enable_semantic_encoder,
+    )
 
 
 def _load_rows(path: Path) -> list[dict[str, Any]]:
@@ -330,24 +584,232 @@ def build_module_meta_lookup(processed_dir: Path):
     return lookup
 
 
-def build_stem_rows(rows: list[dict[str, Any]], processed_dir: Path, quant_min_score: int = 3):
-    clf = load_stem_scope_classifier()
+def build_stem_rows(
+    rows: list[dict[str, Any]],
+    processed_dir: Path,
+    quant_min_score: int = 2,
+    semantic_model: str = "sentence-transformers/all-MiniLM-L6-v2",
+    sentence_vote_diff_threshold: int = 1,
+    semantic_margin: float = 0.04,
+    paragraph_stem_margin: float = 0.06,
+    paragraph_non_stem_margin: float = 0.02,
+    disable_semantic_encoder: bool = False,
+):
+    clf = load_stem_scope_classifier(
+        semantic_model=semantic_model,
+        sentence_vote_diff_threshold=sentence_vote_diff_threshold,
+        semantic_margin=semantic_margin,
+        paragraph_stem_margin=paragraph_stem_margin,
+        paragraph_non_stem_margin=paragraph_non_stem_margin,
+        enable_semantic_encoder=not disable_semantic_encoder,
+    )
     module_meta = build_module_meta_lookup(processed_dir)
 
     stem_rows: list[dict[str, Any]] = []
     for row in rows:
         meta = module_meta.get(_norm(row.get("id")), {})
+        title = row.get("title")
+        description = row.get("description")
         out = clf.classify_module_scope(
             source=row.get("source"),
-            department=meta.get("department"),
-            faculty=meta.get("faculty"),
-            title=row.get("title"),
-            description=row.get("description"),
+            department=meta.get("department") or row.get("department"),
+            faculty=meta.get("faculty") or row.get("faculty"),
+            title=title,
+            description=description,
             quant_min_score=quant_min_score,
         )
-        if out["scope_bucket"] in {"clear_stem", "quant_non_stem"}:
-            stem_rows.append(row)
+        if out["scope_bucket"] == "clear_stem":
+            semantic_available = bool(clf.semantic_encoder is not None and clf.semantic_encoder.available)
+            if semantic_available:
+                document_semantic = clf.semantic_encoder.score_document(title, description)
+                sentence_semantic = clf.semantic_encoder.score_sentences(title, description)
+            else:
+                document_semantic = {
+                    "stem_similarity": 0.0,
+                    "non_stem_similarity": 0.0,
+                    "margin": 0.0,
+                }
+                sentence_semantic = {
+                    "support_count": 0,
+                    "oppose_count": 0,
+                    "total_sentences": 0,
+                    "avg_margin": 0.0,
+                    "max_stem_similarity": 0.0,
+                    "confidence": 0.0,
+                }
+
+            enriched = {
+                **row,
+                "scope_bucket": out["scope_bucket"],
+                "scope_reason": out["scope_reason"],
+                "stem_semantic_metrics": {
+                    "semantic_model_available": semantic_available,
+                    "document": document_semantic,
+                    "sentences": sentence_semantic,
+                    "thresholds": {
+                        "sentence_vote_diff_threshold": sentence_vote_diff_threshold,
+                        "sentence_margin_threshold": semantic_margin,
+                        "paragraph_stem_margin": paragraph_stem_margin,
+                        "paragraph_non_stem_margin": paragraph_non_stem_margin,
+                    },
+                },
+            }
+            stem_rows.append(enriched)
     return stem_rows
+
+
+def build_non_stem_rows(
+    rows: list[dict[str, Any]],
+    processed_dir: Path,
+    quant_min_score: int = 2,
+    semantic_model: str = "sentence-transformers/all-MiniLM-L6-v2",
+    sentence_vote_diff_threshold: int = 1,
+    semantic_margin: float = 0.04,
+    paragraph_stem_margin: float = 0.06,
+    paragraph_non_stem_margin: float = 0.02,
+    disable_semantic_encoder: bool = False,
+):
+    clf = load_stem_scope_classifier(
+        semantic_model=semantic_model,
+        sentence_vote_diff_threshold=sentence_vote_diff_threshold,
+        semantic_margin=semantic_margin,
+        paragraph_stem_margin=paragraph_stem_margin,
+        paragraph_non_stem_margin=paragraph_non_stem_margin,
+        enable_semantic_encoder=not disable_semantic_encoder,
+    )
+    module_meta = build_module_meta_lookup(processed_dir)
+
+    non_stem_rows: list[dict[str, Any]] = []
+    for row in rows:
+        meta = module_meta.get(_norm(row.get("id")), {})
+        title = row.get("title")
+        description = row.get("description")
+        out = clf.classify_module_scope(
+            source=row.get("source"),
+            department=meta.get("department") or row.get("department"),
+            faculty=meta.get("faculty") or row.get("faculty"),
+            title=title,
+            description=description,
+            quant_min_score=quant_min_score,
+        )
+        if out["scope_bucket"] != "clear_stem":
+            semantic_available = bool(clf.semantic_encoder is not None and clf.semantic_encoder.available)
+            if semantic_available:
+                document_semantic = clf.semantic_encoder.score_document(title, description)
+                sentence_semantic = clf.semantic_encoder.score_sentences(title, description)
+            else:
+                document_semantic = {
+                    "stem_similarity": 0.0,
+                    "non_stem_similarity": 0.0,
+                    "margin": 0.0,
+                }
+                sentence_semantic = {
+                    "support_count": 0,
+                    "oppose_count": 0,
+                    "total_sentences": 0,
+                    "avg_margin": 0.0,
+                    "max_stem_similarity": 0.0,
+                    "confidence": 0.0,
+                }
+
+            enriched = {
+                **row,
+                "scope_bucket": out["scope_bucket"],
+                "scope_reason": out["scope_reason"],
+                "stem_semantic_metrics": {
+                    "semantic_model_available": semantic_available,
+                    "document": document_semantic,
+                    "sentences": sentence_semantic,
+                    "thresholds": {
+                        "sentence_vote_diff_threshold": sentence_vote_diff_threshold,
+                        "sentence_margin_threshold": semantic_margin,
+                        "paragraph_stem_margin": paragraph_stem_margin,
+                        "paragraph_non_stem_margin": paragraph_non_stem_margin,
+                    },
+                },
+            }
+            non_stem_rows.append(enriched)
+    return non_stem_rows
+
+
+def build_scoped_rows_with_metrics(
+    rows: list[dict[str, Any]],
+    processed_dir: Path,
+    quant_min_score: int = 2,
+    semantic_model: str = "sentence-transformers/all-MiniLM-L6-v2",
+    sentence_vote_diff_threshold: int = 1,
+    semantic_margin: float = 0.04,
+    paragraph_stem_margin: float = 0.06,
+    paragraph_non_stem_margin: float = 0.02,
+    disable_semantic_encoder: bool = False,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    clf = load_stem_scope_classifier(
+        semantic_model=semantic_model,
+        sentence_vote_diff_threshold=sentence_vote_diff_threshold,
+        semantic_margin=semantic_margin,
+        paragraph_stem_margin=paragraph_stem_margin,
+        paragraph_non_stem_margin=paragraph_non_stem_margin,
+        enable_semantic_encoder=not disable_semantic_encoder,
+    )
+    module_meta = build_module_meta_lookup(processed_dir)
+
+    stem_rows: list[dict[str, Any]] = []
+    non_stem_rows: list[dict[str, Any]] = []
+    for row in rows:
+        meta = module_meta.get(_norm(row.get("id")), {})
+        title = row.get("title")
+        description = row.get("description")
+        out = clf.classify_module_scope(
+            source=row.get("source"),
+            department=meta.get("department") or row.get("department"),
+            faculty=meta.get("faculty") or row.get("faculty"),
+            title=title,
+            description=description,
+            quant_min_score=quant_min_score,
+        )
+
+        semantic_available = bool(clf.semantic_encoder is not None and clf.semantic_encoder.available)
+        if semantic_available:
+            document_semantic = clf.semantic_encoder.score_document(title, description)
+            sentence_semantic = clf.semantic_encoder.score_sentences(title, description)
+        else:
+            document_semantic = {
+                "stem_similarity": 0.0,
+                "non_stem_similarity": 0.0,
+                "margin": 0.0,
+            }
+            sentence_semantic = {
+                "support_count": 0,
+                "oppose_count": 0,
+                "total_sentences": 0,
+                "avg_margin": 0.0,
+                "max_stem_similarity": 0.0,
+                "confidence": 0.0,
+            }
+
+        enriched = {
+            **row,
+            "scope_bucket": out["scope_bucket"],
+            "scope_reason": out["scope_reason"],
+            "stem_semantic_metrics": {
+                "semantic_model_available": semantic_available,
+                "document": document_semantic,
+                "sentences": sentence_semantic,
+                "thresholds": {
+                    "sentence_vote_diff_threshold": sentence_vote_diff_threshold,
+                    "sentence_margin_threshold": semantic_margin,
+                    "paragraph_stem_margin": paragraph_stem_margin,
+                    "paragraph_non_stem_margin": paragraph_non_stem_margin,
+                },
+            },
+        }
+
+        if out["scope_bucket"] == "clear_stem":
+            stem_rows.append(enriched)
+        else:
+            non_stem_rows.append(enriched)
+
+    return stem_rows, non_stem_rows
 
 
 def _parse_args():
@@ -361,7 +823,47 @@ def _parse_args():
     parser.add_argument("--summary", action="store_true", help="Print bucket/reason counts.")
     parser.add_argument("--show-samples", type=int, default=0, help="Show N sample classified rows.")
     parser.add_argument("--output", type=Path, default=None, help="Optional output path for classified rows (.jsonl).")
-    parser.add_argument("--quant-min-score", type=int, default=3, help="Minimum semantic quantitative score for non-STEM override.")
+    parser.add_argument(
+        "--quant-min-score",
+        type=int,
+        default=2,
+        help="Minimum keyword STEM score for fallback override.",
+    )
+    parser.add_argument(
+        "--semantic-model",
+        type=str,
+        default="sentence-transformers/all-MiniLM-L6-v2",
+        help="Sentence-transformers model for sentence-level STEM semantics.",
+    )
+    parser.add_argument(
+        "--sentence-vote-diff-threshold",
+        type=int,
+        default=1,
+        help="Minimum (support_count - oppose_count) for sentence-level STEM override in the gray zone.",
+    )
+    parser.add_argument(
+        "--semantic-margin",
+        type=float,
+        default=0.04,
+        help="Minimum (stem_sim - non_stem_sim) margin for a sentence to count as STEM support.",
+    )
+    parser.add_argument(
+        "--paragraph-stem-margin",
+        type=float,
+        default=0.06,
+        help="Minimum paragraph-level (stem_sim - non_stem_sim) for immediate STEM override.",
+    )
+    parser.add_argument(
+        "--paragraph-non-stem-margin",
+        type=float,
+        default=0.02,
+        help="Minimum paragraph-level (non_stem_sim - stem_sim) to veto STEM overrides.",
+    )
+    parser.add_argument(
+        "--disable-semantic-encoder",
+        action="store_true",
+        help="Disable sentence-level semantic encoder and use keyword fallback only.",
+    )
     parser.add_argument(
         "--build-stem-rows",
         action="store_true",
@@ -370,6 +872,7 @@ def _parse_args():
     parser.add_argument("--courses-input", type=Path, default=DEFAULT_COURSES_INPUT)
     parser.add_argument("--processed-dir", type=Path, default=DEFAULT_PROCESSED_DIR)
     parser.add_argument("--stem-output", type=Path, default=DEFAULT_STEM_OUTPUT)
+    parser.add_argument("--non-stem-output", type=Path, default=DEFAULT_NON_STEM_OUTPUT)
     return parser.parse_args()
 
 
@@ -378,10 +881,22 @@ def main():
     run_build_mode = args.build_stem_rows or (args.input is None and args.source is None)
     if run_build_mode:
         rows = load_courses_from_pkl(args.courses_input)
-        stem_rows = build_stem_rows(rows, processed_dir=args.processed_dir, quant_min_score=args.quant_min_score)
+        stem_rows, non_stem_rows = build_scoped_rows_with_metrics(
+            rows,
+            processed_dir=args.processed_dir,
+            quant_min_score=args.quant_min_score,
+            semantic_model=args.semantic_model,
+            sentence_vote_diff_threshold=args.sentence_vote_diff_threshold,
+            semantic_margin=args.semantic_margin,
+            paragraph_stem_margin=args.paragraph_stem_margin,
+            paragraph_non_stem_margin=args.paragraph_non_stem_margin,
+            disable_semantic_encoder=args.disable_semantic_encoder,
+        )
         _write_jsonl(args.stem_output, stem_rows)
+        _write_jsonl(args.non_stem_output, non_stem_rows)
         print(f"Input rows: {len(rows)}")
         print(f"Saved STEM cleaned module rows: {len(stem_rows)} -> {args.stem_output}")
+        print(f"Saved non-STEM cleaned module rows: {len(non_stem_rows)} -> {args.non_stem_output}")
         return
 
     if args.input is None or args.source is None:
@@ -390,7 +905,14 @@ def main():
         raise FileNotFoundError(f"Input file not found: {args.input}")
 
     rows = _load_rows(args.input)
-    clf = load_stem_scope_classifier()
+    clf = load_stem_scope_classifier(
+        semantic_model=args.semantic_model,
+        sentence_vote_diff_threshold=args.sentence_vote_diff_threshold,
+        semantic_margin=args.semantic_margin,
+        paragraph_stem_margin=args.paragraph_stem_margin,
+        paragraph_non_stem_margin=args.paragraph_non_stem_margin,
+        enable_semantic_encoder=not args.disable_semantic_encoder,
+    )
 
     classified = []
     bucket_counts: dict[str, int] = {}
