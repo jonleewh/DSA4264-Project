@@ -85,22 +85,6 @@ These assumptions are defensible for a labour-market alignment study, but they a
   - `data/cleaned_data/`
   - `data/test/`
 
-### 1.2 Report Map
-
-This report is organised into three main analytical parts:
-
-- **Part I: Data Cleaning and Preparation**
-  - documents how raw job and course data were collected, cleaned, normalised, and converted into reusable analysis-ready datasets
-- **Part II: General Pipeline**
-  - explains the main alignment pipeline used to answer the project question
-  - compares the baseline and experimental approaches and justifies why the baseline pipeline is the main reporting approach
-- **Part III: STEM-Focused Pipeline**
-  - explains why a STEM-only pipeline was explored
-  - motivates STEM scoping as a way to reduce noise in the broader dataset
-  - compares STEM findings against the general pipeline findings
-
-This structure reflects the final project logic: the general pipeline provides the main answer to the project question, while the STEM pipeline acts as a narrower sensitivity analysis.
-
 ## 2. Data and Cleaning
 
 ### 2.1 Jobs Data Cleaning
@@ -281,22 +265,28 @@ The official general workflow lives in `src/create_test/` and starts from the no
 
 ```mermaid
 flowchart LR
-    A["combined_courses_cleaned.pkl"] --> C["create_test_datasets.py"]
-    B["jobs_cleaned.pkl"] --> C["create_test_datasets.py"]
-    C --> D["module_descriptions_test.jsonl"]
-    C --> E["job_descriptions_test.jsonl"]
-    F["module_skill_rules.py"] --> G["build_canonical_skill_framework.py"]
-    G --> H["canonical_skill_framework_v4.json"]
-    E --> I["extract_job_ssoc3_from_original.py"]
-    I --> J["job_ssoc345_with_skills_from_original.jsonl"]
-    D --> K["canonical_skill_mapper.py"]
-    J --> K["canonical_skill_mapper.py"]
+    A([combined_courses_cleaned.pkl]) --> C[create_test_datasets.py]
+    B([jobs_cleaned.pkl]) --> C
+    C --> D([module_descriptions_test.jsonl])
+    C --> E([job_descriptions_test.jsonl])
+    F[module_skill_rules.py] --> G[build_canonical_skill_framework.py]
+    G --> H([canonical_skill_framework_v4.json])
+    E --> I[extract_job_ssoc3_from_original.py]
+    I --> J([job_ssoc345_with_skills_from_original.jsonl])
+    D --> K[canonical_skill_mapper.py]
+    J --> K
     H --> K
-    K --> L["module_skills_canonical.jsonl"]
-    K --> M["job_skills_canonical.jsonl"]
-    L --> N["align_module_job_canonical.py"]
+    K --> L([module_skills_canonical.jsonl])
+    K --> M([job_skills_canonical.jsonl])
+    L --> N[align_module_job_canonical.py]
     M --> N
-    N --> O["module_job_alignment_canonical.json"]
+    N --> O([module_job_alignment_canonical.json])
+
+    classDef script fill:#dceeff,stroke:#24557a,stroke-width:1.5px,color:#102a43;
+    classDef data fill:#e8f5e9,stroke:#2f6b3a,stroke-width:1.5px,color:#183a1d;
+
+    class C,G,I,K,N,F script;
+    class A,B,D,E,H,J,L,M,O data;
 ```
 
 #### 3.1.1 Pipeline Inputs and Export Layer
