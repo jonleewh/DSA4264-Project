@@ -185,13 +185,16 @@ The final distribution of skill counts is plausible for job postings:
 
 The notebook also exports raw and cleaned skill-frequency tables to Excel, which is valuable for stakeholder review. Non-technical reviewers can inspect the vocabulary and challenge cleaning rules if necessary, making the process more governable.
 
-#### 2.1.7 Output Structure and Reusability
+#### 2.1.7 Evaluating Goodness of Job 
+**to be added back after section is restored in notebook!!!**
+
+#### 2.1.8 Output Structure and Reusability
 
 The cleaned dataset is saved as `data/cleaned_data/jobs_cleaned.pkl`. Before saving, the notebook drops intermediate helper columns and reorders the final schema so downstream consumers receive a compact, consistent table.
 
 This is good execution practice. Instead of passing along every temporary artifact created during cleaning, the notebook separates internal processing columns from production-facing outputs. That makes later analysis cleaner and reduces accidental dependency on unstable intermediate fields.
 
-#### 2.1.8 Descriptive Validation and Exploratory Analysis
+#### 2.1.9 Descriptive Validation and Exploratory Analysis
 
 The second half of the notebook performs descriptive analysis on the cleaned data. This is not merely exploratory; it acts as a validation layer. If the top titles, skill distributions, and data-role patterns were obviously implausible, that would signal a problem in the cleaning pipeline.
 
