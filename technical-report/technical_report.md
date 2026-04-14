@@ -75,8 +75,6 @@ This report is organised into three main analytical parts:
 
 This structure reflects the final project logic: the general pipeline provides the main answer to the project question, while the STEM pipeline acts as a narrower sensitivity analysis.
 
-## 2. Methodology
-
 ## 2. Data and Cleaning
 
 ### 2.1 Jobs Data Cleaning
