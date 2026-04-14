@@ -350,7 +350,7 @@ We introduced a STEM-focused test to reduce cross-domain noise in module-job mat
 
 We classify modules into STEM and non-STEM using a hybrid method that combines university-specific metadata classification with semantic text understanding at the paragraph, sentence and keyword levels. Firstly, we mapped modules offered by each university’s STEM-focused departments/faculties as STEM.
 
-For all other modules, we ran an **embedding-based paragraph classifier**, considering the semantic meaning of the module title and description. We used `sentence-transformers` to compare module embeddings with manually constructed STEM and non-STEM prototype centroid texts. The model calculated `stem_similarity`, `non_stem_similarity`, and `margin = stem_similarity - non_stem_similarity`. If `margin` is strongly negative (`<= -2%`, suggesting non-STEM dominates), we block the STEM override. For strongly positive margin (`>= 6%`, suggesting STEM dominates), we classify as a STEM module. This prevents isolated STEM keywords like “regression” influencing clearly non-STEM contexts.
+For all other modules, we ran an **embedding-based paragraph classifier**, considering the semantic meaning of the module title and description. We used `sentence-transformers` to compare module embeddings with manually constructed STEM and non-STEM prototype centroid texts. The model calculated `stem_similarity`, `non_stem_similarity`, and `margin = stem_similarity - non_stem_similarity`. If `margin` is strongly negative (`<= -2%`, suggesting non-STEM dominates), we block the STEM override. For strongly positive margin (`>= 6%`, suggesting STEM dominates), we classify as a STEM module. This prevents isolated STEM keywords influencing clearly non-STEM contexts. For example, NUS EN4229 Autotheory and Contemporary Autofiction is a non-STEM module, but has the word "regression" in the sentence "Does it signal a **regression** to the Self/Subject as already critiqued by theory in the 1980s?". Hence, we need to consider the description's meaning for a robust classification.
 
 For non-decisive paragraph semantics (`-2% < margin < 6%`), we evaluate **sentence-level semantic scoring** as a tie-breaker. We compare each sentence’s STEM vs non-STEM similarity margin and count supporting versus opposing sentences using a fixed margin threshold (`±0.04`). We then apply a STEM override only if the overall document margin is non-negative and supporting evidence exceeds opposing evidence by at least one sentence (`support_count - oppose_count >= 1`).
 
@@ -358,51 +358,23 @@ If semantic overrides still do not trigger, we apply a final keyword fallback (`
 
 Apart from the STEM-specific scoping and module extraction, the `stem_test` pipeline keeps the same downstream alignment backbone as `create_test` **[include a hyperlink!!!!]** (shared canonical framework, canonical mapper, and SSOC-based alignment). A Sankey step is also added to make the decision flow auditable.
 
-### 4.2 Canonical Skill Framework
+### 4.2 Results
 
-- Add a subsection explaining what the canonical framework is and why it is needed.
-- Explain the problem it solves:
-  - lexical variation across job and module skills
-  - the need for a shared skill vocabulary before alignment
-- Describe what is stored in the framework:
-  - canonical skill label
-  - skill type
-  - aliases
-  - excluded phrases
-- State that the framework is now shared across the baseline and STEM pipelines.
-- Explain why centralising it improves consistency and reproducibility.
+On the STEM-specific dataset of 4,431 modules, the pipeline left **** empty modules, achieving a **top-1 overlap rate of xxx** and an **average top-1 score of xxx**, compared with **xxx** and **xxx** for the experimental pipeline for all modules.
 
-### 4.3 Alignment Methodology
+Table 3 summarizes the results for the STEM dataset.
 
-- Add a subsection explaining how module-job alignment is computed.
-- Describe the use of canonical skill overlaps and job-group aggregation.
-- Explain the role of SSOC grouping in structuring job demand.
-- Summarise the scoring logic in plain language:
-  - overlap
-  - coverage
-  - weighted similarity
-  - gap interpretation
-- Explain what the final output means for stakeholders:
-  - indicative alignment, not causal proof
-  - useful for curriculum review and prioritisation
+| Metric | Baseline | Experimental |
+|---|---:|---:|
+| Modules evaluated | 10,507 | 10,507 |
+| Empty modules | 136 | 2,819 |
+| Non-empty modules | 10,371 | 7,688 |
+| Top-1 overlap rate | 0.7391 | 0.5775 |
+| Average top-1 score | 0.0647 | 0.0410 |
+| Avg canonical skills per non-empty module | 4.537 | 2.419 |
 
-### 4.4 Reproducibility and Repository Design
+Together, the table shows that the STEM pipeline is more robust, **with xxx.**
 
-- Add a subsection documenting the repo cleanup and standardisation work.
-- Explain how the repo is organized into:
-  - baseline
-  - experimental
-  - STEM
-  - legacy
-- Mention the addition of shell-script shortcuts.
-- Explain why this matters:
-  - easier onboarding
-  - easier reruns
-  - clearer distinction between supported and exploratory code paths
-- Mention any validation performed:
-  - dry runs
-  - pipeline output checks
-  - consistency checks across frameworks
 
 ## 5. Findings and Implications
 
@@ -490,6 +462,8 @@ Additional limitations to document:
 - Alignment scores are similarity-based and should not be interpreted as causal measures of programme effectiveness.
 - The STEM scope classification is rule-based and inherits the limitations of department-level labeling.
 - Changes in labour-market language over time may reduce comparability if the framework is not periodically refreshed.
+- Job data was only taken from **MyCareersFuture**, and doesn't include other job descriptions from portals like Careers@Gov and LinkedIn.
+
 
 Ethical considerations to add:
 
