@@ -2,88 +2,64 @@
 
 ## 1. Context
 
-This project studies how well university curricula prepare students for real-world jobs. Within that broader objective, `data_cleaning_jobs_merged.ipynb` is one of the core preprocessing notebooks for labour-market demand data. Its role is to transform raw MyCareersFuture-style job posting JSON files into a structured, analysis-ready dataset that can later be compared against university course content and extracted skill profiles.
+In recent years, concerns have emerged over declining employment outcomes among fresh graduates in Singapore. The 2025 Graduate Employment Survey (GES) reported a decline in full-time permanent employment despite stable median salaries (The Straits Times, 2025), while surveys indicate increasing anxiety among graduates on job prospects (Channel NewsAsia, 2025).
 
-The public-sector relevance is direct. If a ministry, workforce agency, or public university wants to evaluate whether graduates are being trained for current market demand, the first requirement is a reliable view of entry-level job opportunities. Raw job postings are noisy, duplicated, semi-structured, and operationally inconsistent. Without a defensible cleaning pipeline, any downstream skill-gap analysis would risk misleading policy decisions, such as over-prioritising transient employer language, underestimating graduate-ready opportunities, or drawing conclusions from internship-heavy data that do not reflect full-time labour-market demand.
+These trends raise important questions about the alignment between higher education and labour market demands. Current analyses rely on aggregate outcomes, lacking visibility into specific skills or curriculum components contributing to employability outcomes. While universities continue to equip students with theoretical knowledge and foundational skills, the evolving nature of industry requirements, driven by technological advancements and shifting economic conditions, may result in a mismatch between what is taught and what employers seek.
 
-This notebook therefore acts as a governance layer between raw postings and higher-level analytics. It narrows the dataset to fresh-graduate-relevant roles, standardises job attributes, normalises skills, and produces summary analyses that help stakeholders understand both the resulting dataset and the shape of the entry-level market. In practical terms, it supports evidence-based decisions on curriculum review, graduate employability initiatives, and early-stage manpower planning.
+Hence, this project answers a key question: How well are university courses preparing students for real-world jobs? By analysing job descriptions alongside university course content, we aims to systematically evaluate the extent to which academic curricula align with current industry skill requirements, and to identify potential gaps that may contribute to graduate employment challenges.
 
 ## 2. Scope
 
 ### 2.1 Problem
 
-- State the full project question explicitly:
-  - how well do Singapore university courses prepare students for real-world jobs?
-- Define the comparison unit:
-  - university modules and their extracted skill signals
-  - fresh-graduate-relevant job postings and their extracted skill demand
-- Clarify why this matters in a public-sector context:
-  - curriculum review
-  - graduate employability
-  - workforce planning
-  - evidence-based policy decisions on higher education and manpower alignment
+#### Problem definition 
+MOE’s Higher Education Policy Division (HEPD) faces the ongoing challenge of ensuring that university curricula remain aligned with labour market demands. As the body responsible for higher education policy and quality assurance, HEPD must regularly assess whether graduates possess the skills required by employers.
+However, this task is inherently complex due to the nature of the data involved. Job advertisements and course descriptions are large-scale, unstructured, and continuously evolving sources of information. Thousands of job postings are generated regularly, with skills described using varied, inconsistent, and context-dependent language. Similarly, course descriptions differ across institutions in structure, terminology, and level of detail.
+This problem occurs continuously as labour market demands shift rapidly due to technological advancements and industry changes. In the absence of an automated system, HEPD relies on manual reviews or periodic audits conducted over multi-year cycles. These approaches are resource-intensive and unable to keep pace with real-time changes, increasing the risk that curriculum evaluations are based on outdated or incomplete information.
+
+#### Impact and Significance 
+The lack of a scalable and systematic approach to assessing curriculum–labour market alignment has several key consequences:
+Graduate employability challenges: The 2025 Graduate Employment Survey (GES) reports a decline in full-time employment among fresh graduates, suggesting potential mismatches between acquired skills and employer expectations (The Straits Times, 2025).
+Increased job search anxiety: Graduates report heightened uncertainty and stress in securing employment, reflecting concerns about their preparedness for the job market (Channel NewsAsia, 2025).
+Inefficient curriculum planning: Universities may continue offering courses that are not closely aligned with industry needs, leading to suboptimal allocation of educational resources.
+Delayed policy response: Without timely insights, MOE may take years to identify emerging skill gaps, limiting its ability to respond proactively.
+Scalability limitations: Manually analysing thousands of job postings and course descriptions is impractical, making continuous monitoring infeasible.
+Collectively, these issues weaken the ability of the higher education system to produce graduates who are well-prepared for an evolving workforce.
+
+#### Why Data Science / Machine Learning is Appropriate
+Data science and machine learning provide a suitable solution due to their ability to process large-scale, unstructured, and dynamic data.
+First, Natural Language Processing (NLP) techniques enable the extraction and standardisation of skill-related information from both job advertisements and course descriptions, allowing meaningful comparison despite differences in wording.
+Second, embedding-based models can represent both datasets within a shared semantic space, where similarity measures (e.g., cosine similarity) quantify the alignment between courses and job requirements. This transforms qualitative text into measurable indicators.
+Finally, automated data pipelines enable continuous and scalable analysis, allowing MOE to monitor labour market trends in near real-time rather than relying on infrequent manual reviews. This improves both the speed and reliability of insights, supporting more responsive and data-driven policy decisions.
+Overall, data science and machine learning directly address the challenges of scale, variability, and timeliness, making them well-suited for evaluating curriculum relevance in a rapidly changing labour market.
+
+
 
 ### 2.2 Success Criteria
 
-- Define what successful project delivery looks like:
-  - cleaned and analysis-ready job dataset
-  - cleaned and analysis-ready university course dataset
-  - reproducible downstream pipelines for alignment analysis
-  - interpretable outputs for technical and policy stakeholders
-- Add technical success criteria:
-  - robust preprocessing from noisy raw data
-  - stable canonical skill mapping
-  - reproducible baseline and STEM workflows
-  - clear experimental comparison path
-- Add analytical success criteria:
-  - ability to compare course-side and job-side skills at scale
-  - ability to identify strong alignment and likely skill gaps
-  - ability to produce findings useful for curriculum discussion
+#### Business Goals
+If our project is successful, it can improve alignment between university curricula and labour market demand. The project enables stakeholders (e.g., MOE, universities) to identify gaps between skills taught in courses and skills required in job advertisements. Success is achieved if the system can consistently highlight high- and low-alignment courses, supporting data-driven curriculum improvements.
+
+Another success outcome is enhancing graduate employability insights. By linking courses to relevant job opportunities and associated salary signals, the system provides actionable insights into which courses are most aligned with industry needs. Success is reflected in the ability to generate meaningful rankings or recommendations that inform students, educators, and policymakers.
+
+#### Operational Goals 
+Scalable and efficient processing of large unstructured datasets is another success outcome. The system should be able to process thousands of job postings and course descriptions efficiently using automated pipelines (e.g., text cleaning, skill extraction, embeddings). Success is achieved if the pipeline runs reliably within a reasonable time (e.g., minutes instead of manual analysis).
+
+Accurate and consistent skill extraction and matching should also be achieved. The system should produce reliable representations of skills from both job and course data. Success is indicated by consistent alignment scores that reflect meaningful overlaps between courses and jobs, avoiding noise from irrelevant or low-quality skill data.
 
 ### 2.3 Assumptions
 
-The `data_cleaning_jobs_merged.ipynb` notebook makes several important assumptions:
+This project is based on several key assumptions that influence its feasibility and the validity of its outputs.
 
-- Fresh-graduate-friendly roles can be approximated using `minimum_years_experience` equal to 0 or 1.
-- Internship and postgraduate roles should be excluded because the project focuses on undergraduate-to-workforce alignment rather than internships or advanced academic labour markets.
-- Employer-provided skills are sufficiently informative to serve as a proxy for job-skill demand once normalised.
-- Repeated postings with the same title and description do not add analytical value and should be deduplicated.
-- For unknown work types, SSOC group patterns and salary levels provide a reasonable fallback for imputation.
+First, it is assumed that job advertisements provide a reliable proxy for labour market demand. While job postings reflect employer requirements, they may not always fully capture actual job responsibilities or may include inflated or generic skill requirements. 
+Second, the analysis assumes that university course descriptions accurately represent the skills and knowledge acquired by students. In practice, actual learning outcomes may vary depending on teaching methods, assessments, and informal learning experiences.
 
-These assumptions are defensible for a labour-market alignment study, but they also define the limits of interpretation. The resulting dataset is best understood as a curated view of entry-level demand rather than a complete representation of all possible graduate transitions.
+Third, the project assumes that NLP techniques can effectively extract meaningful skill signals from unstructured text. However, some skills may be implicit, context-dependent, or described inconsistently, which could affect extraction accuracy.
 
-### 2.4 Stakeholders
+Fourth, it is assumed that semantic similarity between course content and job descriptions is a valid indicator of real-world alignment. While embedding models capture textual similarity, they may not fully reflect the depth or practical applicability of skills.
 
-- Identify the main stakeholders:
-  - public universities
-  - workforce agencies
-  - ministries involved in higher education and manpower planning
-  - students and recent graduates
-- Add what each stakeholder cares about:
-  - curriculum relevance
-  - employability outcomes
-  - demand for technical and transferable skills
-  - resource prioritisation for programme updates
-- Explain how the project outputs support stakeholder decision-making:
-  - alignment summaries
-  - interpretable skills comparisons
-  - reusable data pipelines that can be refreshed with new data
+Finally, it is assumed that sufficient and representative data is available, and that stakeholders (e.g., MOE and universities) are able to act on the insights generated. Without adequate data quality or institutional adoption, the system’s impact would be limited.
 
-### 2.5 Deliverables
-
-- List the main deliverables of the project:
-  - cleaned jobs dataset
-  - cleaned university courses dataset
-  - baseline alignment pipeline
-  - experimental comparison pipeline
-  - STEM-specific alignment pipeline
-  - technical report and supporting artifacts
-- Note where these deliverables live in the repository:
-  - `src/notebooks/`
-  - `src/create_test/`
-  - `src/stem_test/`
-  - `data/cleaned_data/`
-  - `data/test/`
 
 ## 3. Overall Report Structure
 
