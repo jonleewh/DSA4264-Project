@@ -59,22 +59,6 @@ Fourth, it is assumed that semantic similarity between course content and job de
 Finally, it is assumed that sufficient and representative data is available, and that stakeholders (e.g., MOE and universities) are able to act on the insights generated. Without adequate data quality or institutional adoption, the system’s impact would be limited.
 
 
-### 1.4. Overall Report Structure
-
-This report is organised into three main analytical parts:
-
-- **Part I: Data Cleaning and Preparation**
-  - documents how raw job and course data were collected, cleaned, normalised, and converted into reusable analysis-ready datasets
-- **Part II: General Pipeline**
-  - explains the main alignment pipeline used to answer the project question
-  - compares the baseline and experimental approaches and justifies why the baseline pipeline is the main reporting approach
-- **Part III: STEM-Focused Pipeline**
-  - explains why a STEM-only pipeline was explored
-  - motivates STEM scoping as a way to reduce noise in the broader dataset
-  - compares STEM findings against the general pipeline findings
-
-This structure reflects the final project logic: the general pipeline provides the main answer to the project question, while the STEM pipeline acts as a narrower sensitivity analysis.
-
 ## 2. Data and Cleaning
 
 ### 2.1 Jobs Data Cleaning
