@@ -352,8 +352,45 @@ For non-decisive paragraph semantics (`-2% < margin < 6%`), we evaluate **senten
 
 If semantic overrides still do not trigger, we apply a final keyword fallback (`quant_min_score = 2`) with contextual safeguards (false positives, quantitative-term blocklists, non-STEM context checks).
 
-Apart from the STEM-specific scoping and module extraction, the `stem_test` pipeline keeps the same downstream alignment backbone as `create_test` **[include a hyperlink!!!!]** (shared canonical framework, canonical mapper, and SSOC-based alignment). A Sankey step is also added to make the decision flow auditable.
+Apart from the STEM-specific scoping and module extraction, the `stem_test` pipeline keeps the same downstream alignment backbone as `create_test` **[include a hyperlink!!!!]** (shared canonical framework, canonical mapper, and SSOC-based alignment). A Sankey step is also added to make the decision flow auditable. **(decide if this is necessary!!!)**
 
+```mermaid
+flowchart LR
+    A["combined_courses_cleaned.pkl"] --> S1["stem_1_generate_scope_classifications.py"]
+    S1 --> S2["stem_1_scope_classifier.py"]
+    S2 --> S3["stem_1_generate_sankey.py"]
+    S3 --> S4["stem_2_create_test_datasets.py"]
+
+    B["jobs_cleaned.pkl"] --> S4
+    S4 --> D["module_descriptions_test_STEM.json"]
+    S4 --> E["job_descriptions_test_STEM.json"]
+
+    F["module_skill_rules.py"] --> G["stem_5_build_canonical_skill_framework.py"]
+    G --> H["canonical_skill_framework_v4.json"]
+
+    D --> X["stem_3_extract_module_skills_independent.py"]
+    X --> Y["module_descriptions_test_with_skills_independent_STEM.jsonl"]
+
+    E --> I["stem_4_extract_job_ssoc3_from_original.py"]
+    I --> J["job_ssoc345_with_skills_from_original_STEM.jsonl"]
+
+    Y --> K["stem_6_canonical_skill_mapper.py --map-stem-pipeline"]
+    J --> K
+    H --> K
+    K --> L["module_skills_canonical_stem.jsonl"]
+    K --> M["job_skills_canonical_stem.jsonl"]
+
+    L --> N["stem_8_align_module_job_canonical.py"]
+    M --> N
+    N --> O["module_job_alignment_STEM.json"]
+
+    classDef script fill:#dceeff,stroke:#24557a,stroke-width:1.5px,color:#102a43;
+    classDef data fill:#e8f5e9,stroke:#2f6b3a,stroke-width:1.5px,color:#183a1d;
+
+    class S1,S2,S3,S4,G,X,I,K,N,F script;
+    class A,B,D,E,H,Y,J,L,M,O data;
+
+```
 ### 4.2 Results
 
 On the STEM-specific dataset of **4,431 modules**, the pipeline left **19** empty modules, achieving a **top-1 overlap rate of 0.9998** and an **average top-1 score of 0.1571**, compared with **0.5775** and **0.0410** respectively for the experimental pipeline.
@@ -374,7 +411,10 @@ The STEM pipeline appears more robust because it preserves substantially more mo
 Having only 19 empty modules and a higher best-match strength comes from rules better matched to language patterns in technical module descriptions. This allows for more canonical skills per module, causing a higher probability of overlap with job-group skill profiles. Hence, denser and more accurate canonical skill representations produce stronger best-match alignments. The gain is therefore best interpreted as strong in-domain robustness: the STEM pipeline’s assumptions fit the STEM data distribution much better than the broader experimental setup.
 
 
+
 ## 5. Findings and Implications
+
+**Talk about the low alignment scores**
 
 ### 5.1 Robustness
 
@@ -441,7 +481,7 @@ These do not undermine the core cleaning pipeline, but they are important if the
 
 ### 6.1 Limitations, Biases, and Ethical Considerations
 
-Our jobs data is limited in scope and timeframe. We only used job descriptions from **MyCareersFuture** over **one week**. Hence, our findings may be limited in relevance; changes in labour-market trends over time may reduce comparability if the framework is not periodically refreshed.
+Our **jobs data** is limited in scope and timeframe. We only used job descriptions from **MyCareersFuture** over **one week**. Hence, our findings may be limited in relevance; changes in labour-market trends over time may reduce comparability if the framework is not periodically refreshed.
 
 Additionally, the graduate filter is rule-based. Using `minimum_years_experience` in `{0,1}` is practical, but employers may wronglyindicate the filter wrongly graduate-suitable jobs may require 2 years, while some 0-1 year roles may still be unsuitable for typical undergraduates. Besides, human errors from employers in wrongly selecting 0-1 year roles may exist.
 
@@ -451,13 +491,13 @@ Our skill extraction depends on employer-supplied structured skill fields. Emplo
 
 The data-role subset is small at 29 postings. It is useful for illustration, but not yet strong enough for high-confidence sectoral conclusions.
 
-Fifth, the notebook supports public-sector analysis but does not by itself resolve fairness concerns. For example, if certain industries systematically omit salary data or structured skills, the cleaned dataset may underrepresent them in downstream comparisons. Policymakers should treat the outputs as directional evidence rather than ground truth.
-
-For module descriptions, we focused on three universities as these datasets were most accessible. We extracted skills purely based on generic module descriptions, which may not fully capture teaching quality, learning outcomes or pedagogical depth. Additionally, our STEM scope classification is rule-based and inherits the limitations of department-level labeling.
+For **module descriptions**, we focused on three universities as these datasets were most accessible. We extracted skills purely based on generic module descriptions, which may not fully capture teaching quality, learning outcomes or pedagogical depth. Additionally, our STEM scope classification is rule-based and inherits the limitations of department-level labeling.
 
 Canonical skill mapping introduces its own abstraction layer, which may merge distinct competencies or preserve distinctions that are not meaningful to employers.
 
 Module-job alignment scores are similarity-based and should not be interpreted as causal measures of programme effectiveness.
+
+**Is this relevant?:** The notebook supports public-sector analysis but does not by itself resolve fairness concerns. For example, if certain industries systematically omit salary data or structured skills, the cleaned dataset may underrepresent them in downstream comparisons. Policymakers should treat the outputs as directional evidence rather than ground truth.
 
 
 Ethical considerations to add:
@@ -466,6 +506,8 @@ Ethical considerations to add:
 - Note that course-job alignment should not be the only basis for judging educational value.
 - Acknowledge the risk that humanities or interdisciplinary programmes may look weaker under a purely skill-overlap framing.
 - Emphasise the importance of human review before using the outputs for high-stakes policy decisions.
+
+
 
 ### 6.2 Future Areas for Improvement
 
