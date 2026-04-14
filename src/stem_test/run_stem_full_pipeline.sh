@@ -27,6 +27,7 @@ fi
 
 "$PYTHON_BIN" src/stem_test/stem_1_generate_scope_classifications.py
 "$PYTHON_BIN" src/stem_test/stem_1_scope_classifier.py
+"$PYTHON_BIN" src/stem_test/stem_1_generate_sankey.py
 "$PYTHON_BIN" src/stem_test/stem_2_create_test_datasets.py
 "$PYTHON_BIN" src/stem_test/stem_5_build_canonical_skill_framework.py
 if [[ "${RUN_RULE_REGEN:-0}" == "1" ]]; then
