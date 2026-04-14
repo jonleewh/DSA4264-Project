@@ -59,7 +59,7 @@ Fourth, it is assumed that semantic similarity between course content and job de
 Finally, it is assumed that sufficient and representative data is available, and that stakeholders (e.g., MOE and universities) are able to act on the insights generated. Without adequate data quality or institutional adoption, the system’s impact would be limited.
 
 
-## 1.4. Overall Report Structure
+### 1.4. Overall Report Structure
 
 This report is organised into three main analytical parts:
 
