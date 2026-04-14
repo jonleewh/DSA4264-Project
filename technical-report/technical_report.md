@@ -209,27 +209,90 @@ These summaries directly support the broader project objective. They show what e
 
 #### 2.2.1 University Course Cleaning Methodology
 
-- Add a matching methodology subsection for `data_cleaning_university_merged.ipynb`.
-- Describe the course-side data sources:
-  - NUSMods API
-  - NTU scraper outputs and department mapping
-  - SUTD scraper outputs
-- Explain how module descriptions were cleaned and standardized.
-- Document the cleaned course schema:
+Notebook Workflow
+Methodologically, the notebook follows a structured data engineering workflow:
+Ingest raw semi-structured course data from multiple universities
+Standardise heterogeneous schemas into a unified tabular format
+Clean and normalise textual fields (titles, descriptions, departments)
+Filter for undergraduate-relevant modules
+Remove noise and low-quality records
+Prepare text for downstream NLP (e.g., skill extraction)
+Persist a cleaned, analysis-ready dataset
+Perform basic validation checks to ensure plausibility
+This pipeline separates data preparation from downstream analysis, while keeping both within a single notebook for transparency and reproducibility.
+
+#### 2.2.2 Project-Wide Pipeline Overview
+
+At a system level, the module data cleaning notebook forms one component of a broader end-to-end pipeline:
+Raw module data acquisition (NUS, NTU, SUTD sources)
+Preprocessing and scraping outputs
+Notebook-based cleaning and standardisation
+Construction of a unified module dataset
+Skill extraction and canonical skill mapping
+Alignment with job-side skill demand
+Downstream analytics (e.g., curriculum–labour market comparison)
+The cleaned dataset produced in this notebook serves as a source of truth for all downstream workflows, ensuring consistency across the project.
+
+#### 2.2.3 Data Collection and Ingestion
+The notebook loads module data from multiple university sources and consolidates them into a unified structure. Each dataset may contain different schemas, naming conventions, and formatting styles.
+During ingestion:
+Raw course data from each university is loaded into separate DataFrames. NUS data is obtained from API. NTU data are obtained from scraper outputs and department codes are mapped to full department names via an external lookup table. SUTD data is obtained from scraper outputs.
+Key fields are extracted and standardised, including:
+code (module code)
+title
+description
+department
+A university column is added to preserve data provenance
+
+#### 2.2.4 Text Cleaning and Normalisation
+Given that module descriptions are often noisy and inconsistently formatted, the notebook applies several text-cleaning steps:
+Convert all text to lowercase for consistency
+Standardise spelling (e.g., British → American variants)
+Remove HTML tags using BeautifulSoup
+Remove non-printable or invalid Unicode characters
+Normalise whitespace (remove extra spaces and line breaks)
+These steps are critical because downstream NLP tasks (e.g., skill extraction) are highly sensitive to text quality. Cleaning ensures that patterns in the data reflect actual content rather than formatting artefacts.
+
+#### 2.2.5 Targeted Filtering for Undergraduate Modules
+To align with the project objective, the dataset is filtered to retain only relevant undergraduate modules.
+The notebook applies the following rules:
+Remove modules with very short descriptions (e.g., fewer than 10 words)
+Exclude modules from irrelevant faculties or programmes (e.g., medical school, continuing education)
+Filter out postgraduate modules using:
+Title-based keywords (e.g., “PhD”, “Master’s”)
+Description-based indicators
+Course-type signals where available
+Drop rows with missing essential fields (e.g., title or description)
+These filters ensure that the dataset reflects curriculum content relevant to undergraduate education, which is necessary for meaningful comparison with entry-level job demand.
+
+#### 2.2.6 Preparation for Skill Extraction
+The cleaned dataset is further processed to support NLP-based skill extraction:
+Descriptions are tokenised or split into manageable chunks
+Word counts are computed safely (handling null values)
+Text is normalised to reduce variation in terminology
+Additionally, preprocessing is aligned with the requirements of embedding-based models (e.g., MiniLM), ensuring that:
+Noise is minimised
+Semantic signals are preserved
+Input text is suitable for similarity-based matching
+This step bridges raw curriculum data and skill-level representations, which are central to the project.
+
+#### 2.2.7 Schema Standardisation Across Universities
+A key challenge is harmonising data across universities with different structures.
+The notebook standardises:
+Column names into a unified schema
+Department representations (e.g., NTU code → full name)
+Text formats across all fields
+The final dataset uses a consistent schema:
   - `code`
   - `title`
   - `department`
   - `description`
   - `university`
   - skill-related fields stored in the cleaned PKL
-- Explain how module-side skills were produced in the notebook:
-  - `skills_embedding`
-  - `hard_skills`
-  - `soft_skills`
-- Add university-side data-quality issues:
-  - missing descriptions from NTU and SUTD
-  - uneven metadata richness across universities
-  - department or faculty inconsistencies
+This enables cross-university comparisons and ensures compatibility with downstream pipelines.
+
+The final cleaned dataset is saved as a structured pkl file, ensures that downstream users receive a compact, stable, and reusable dataset, without dependency on intermediate processing artifacts.
+
 
 ## 3. General Pipeline
 
