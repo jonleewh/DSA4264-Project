@@ -208,91 +208,25 @@ These summaries directly support the broader project objective. They show what e
 ### 2.2 University Data Cleaning
 
 #### 2.2.1 University Course Cleaning Methodology
-
-Notebook Workflow
-Methodologically, the notebook follows a structured data engineering workflow:
-Ingest raw semi-structured course data from multiple universities
-Standardise heterogeneous schemas into a unified tabular format
-Clean and normalise textual fields (titles, descriptions, departments)
-Filter for undergraduate-relevant modules
-Remove noise and low-quality records
-Prepare text for downstream NLP (e.g., skill extraction)
-Persist a cleaned, analysis-ready dataset
-Perform basic validation checks to ensure plausibility
-This pipeline separates data preparation from downstream analysis, while keeping both within a single notebook for transparency and reproducibility.
+The notebook follows a structured data engineering workflow to transform raw, semi-structured course data into an analysis-ready dataset. It begins by ingesting module data from multiple universities and standardising heterogeneous schemas into a unified tabular format. Textual fields such as titles, descriptions, and departments are cleaned and normalised, after which the dataset is filtered to retain undergraduate-relevant modules. Noisy or low-quality records are removed, and the cleaned text is prepared for downstream NLP tasks such as skill extraction. The final dataset is persisted as a structured output, with validation checks performed to ensure plausibility. This workflow separates data preparation from analysis while maintaining transparency within a single notebook.
 
 #### 2.2.2 Project-Wide Pipeline Overview
-
-At a system level, the module data cleaning notebook forms one component of a broader end-to-end pipeline:
-Raw module data acquisition (NUS, NTU, SUTD sources)
-Preprocessing and scraping outputs
-Notebook-based cleaning and standardisation
-Construction of a unified module dataset
-Skill extraction and canonical skill mapping
-Alignment with job-side skill demand
-Downstream analytics (e.g., curriculum–labour market comparison)
-The cleaned dataset produced in this notebook serves as a source of truth for all downstream workflows, ensuring consistency across the project.
+At a system level, this notebook forms part of a broader end-to-end pipeline. The process spans raw module data acquisition (from NUS, NTU, and SUTD), preprocessing and scraping, notebook-based cleaning, and construction of a unified dataset. This dataset feeds into skill extraction and canonical skill mapping, which are then aligned with job-side skill demand for downstream analytics such as curriculum–labour market comparison. The cleaned dataset serves as the source of truth for all subsequent workflows, ensuring consistency across the project.
 
 #### 2.2.3 Data Collection and Ingestion
-The notebook loads module data from multiple university sources and consolidates them into a unified structure. Each dataset may contain different schemas, naming conventions, and formatting styles.
-During ingestion:
-Raw course data from each university is loaded into separate DataFrames. NUS data is obtained from API. NTU data are obtained from scraper outputs and department codes are mapped to full department names via an external lookup table. SUTD data is obtained from scraper outputs.
-Key fields are extracted and standardised, including:
-code (module code)
-title
-description
-department
-A university column is added to preserve data provenance
+Module data is loaded from multiple sources and consolidated into a unified structure despite differences in schemas and formatting. NUS data is obtained via API, while NTU and SUTD data are sourced from scraper outputs, with NTU department codes mapped to full names using an external lookup table. Key fields—module code, title, description, and department—are extracted and standardised, and a university column is added to preserve provenance.
 
 #### 2.2.4 Text Cleaning and Normalisation
-Given that module descriptions are often noisy and inconsistently formatted, the notebook applies several text-cleaning steps:
-Convert all text to lowercase for consistency
-Standardise spelling (e.g., British → American variants)
-Remove HTML tags using BeautifulSoup
-Remove non-printable or invalid Unicode characters
-Normalise whitespace (remove extra spaces and line breaks)
-These steps are critical because downstream NLP tasks (e.g., skill extraction) are highly sensitive to text quality. Cleaning ensures that patterns in the data reflect actual content rather than formatting artefacts.
+Given the inconsistency of module descriptions, extensive text cleaning is applied. This includes lowercasing, spelling standardisation, HTML removal using BeautifulSoup, elimination of invalid Unicode characters, and whitespace normalisation. These steps ensure that textual data reflects meaningful content rather than formatting artefacts, which is critical for downstream NLP tasks.
 
 #### 2.2.5 Targeted Filtering for Undergraduate Modules
-To align with the project objective, the dataset is filtered to retain only relevant undergraduate modules.
-The notebook applies the following rules:
-Remove modules with very short descriptions (e.g., fewer than 10 words)
-Exclude modules from irrelevant faculties or programmes (e.g., medical school, continuing education)
-Filter out postgraduate modules using:
-Title-based keywords (e.g., “PhD”, “Master’s”)
-Description-based indicators
-Course-type signals where available
-Drop rows with missing essential fields (e.g., title or description)
-These filters ensure that the dataset reflects curriculum content relevant to undergraduate education, which is necessary for meaningful comparison with entry-level job demand.
+To align with project objectives, the dataset is filtered to retain only undergraduate-relevant modules. Modules with very short descriptions are removed, along with those from irrelevant faculties and postgraduate programmes identified through title and description cues. Rows with missing essential fields are also excluded. This ensures that the dataset reflects curriculum content relevant to entry-level job demand.
 
 #### 2.2.6 Preparation for Skill Extraction
-The cleaned dataset is further processed to support NLP-based skill extraction:
-Descriptions are tokenised or split into manageable chunks
-Word counts are computed safely (handling null values)
-Text is normalised to reduce variation in terminology
-Additionally, preprocessing is aligned with the requirements of embedding-based models (e.g., MiniLM), ensuring that:
-Noise is minimised
-Semantic signals are preserved
-Input text is suitable for similarity-based matching
-This step bridges raw curriculum data and skill-level representations, which are central to the project.
+The cleaned dataset is further processed for NLP-based skill extraction. Descriptions are tokenised into manageable units, word counts are computed robustly, and text is normalised to reduce variation. This preprocessing ensures compatibility with embedding-based models such as MiniLM, preserving semantic signals while minimising noise.
 
 #### 2.2.7 Schema Standardisation Across Universities
-A key challenge is harmonising data across universities with different structures.
-The notebook standardises:
-Column names into a unified schema
-Department representations (e.g., NTU code → full name)
-Text formats across all fields
-The final dataset uses a consistent schema:
-  - `code`
-  - `title`
-  - `department`
-  - `description`
-  - `university`
-  - skill-related fields stored in the cleaned PKL
-This enables cross-university comparisons and ensures compatibility with downstream pipelines.
-
-The final cleaned dataset is saved as a structured pkl file, ensures that downstream users receive a compact, stable, and reusable dataset, without dependency on intermediate processing artifacts.
-
+Finally, the notebook harmonises data across universities by standardising column names, department representations, and text formats. The dataset adopts a consistent schema (code, title, department, description, university, and skill-related fields) and is saved as a .pkl file. Intermediate artifacts are removed, producing a compact, stable dataset suitable for downstream analysis.
 
 ## 3. General Pipeline
 
