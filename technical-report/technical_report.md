@@ -265,22 +265,22 @@ The official general workflow lives in `src/create_test/` and starts from the no
 
 ```mermaid
 flowchart LR
-    A([combined_courses_cleaned.pkl]) --> C[create_test_datasets.py]
-    B([jobs_cleaned.pkl]) --> C
-    C --> D([module_descriptions_test.jsonl])
-    C --> E([job_descriptions_test.jsonl])
-    F[module_skill_rules.py] --> G[build_canonical_skill_framework.py]
-    G --> H([canonical_skill_framework_v4.json])
-    E --> I[extract_job_ssoc3_from_original.py]
-    I --> J([job_ssoc345_with_skills_from_original.jsonl])
-    D --> K[canonical_skill_mapper.py]
-    J --> K
+    A["combined_courses_cleaned.pkl"] --> C["create_test_datasets.py"]
+    B["jobs_cleaned.pkl"] --> C["create_test_datasets.py"]
+    C --> D["module_descriptions_test.jsonl"]
+    C --> E["job_descriptions_test.jsonl"]
+    F["module_skill_rules.py"] --> G["build_canonical_skill_framework.py"]
+    G --> H["canonical_skill_framework_v4.json"]
+    E --> I["extract_job_ssoc3_from_original.py"]
+    I --> J["job_ssoc345_with_skills_from_original.jsonl"]
+    D --> K["canonical_skill_mapper.py"]
+    J --> K["canonical_skill_mapper.py"]
     H --> K
-    K --> L([module_skills_canonical.jsonl])
-    K --> M([job_skills_canonical.jsonl])
-    L --> N[align_module_job_canonical.py]
+    K --> L["module_skills_canonical.jsonl"]
+    K --> M["job_skills_canonical.jsonl"]
+    L --> N["align_module_job_canonical.py"]
     M --> N
-    N --> O([module_job_alignment_canonical.json])
+    N --> O["module_job_alignment_canonical.json"]
 
     classDef script fill:#dceeff,stroke:#24557a,stroke-width:1.5px,color:#102a43;
     classDef data fill:#e8f5e9,stroke:#2f6b3a,stroke-width:1.5px,color:#183a1d;
@@ -360,23 +360,19 @@ The final modelling decision was to keep the baseline pipeline as the official g
 
 ## 4. STEM Robustness Analysis
 
-### 4.1 STEM Pipeline
+We introduced a STEM-focused test to reduce cross-domain noise in module-job matching. In the full module universe, many modules are intentionally non-technical or mixed-context, which can dilute technical-skill signals and make alignment scores harder to interpret for workforce-oriented technical roles. By scoping to STEM, we test whether alignment patterns remain consistent under a more technically coherent module set, and to check for robustness and sensitivity.
 
-- Add a subsection for the STEM-focused pipeline in `src/stem_test/`.
-- Explain why the STEM branch exists:
-  - narrower scope
-  - stronger focus on technically oriented module-job alignment
-  - ability to compare STEM-only alignment patterns against the broader baseline
-- Describe the active STEM steps:
-  - STEM scope classification
-  - STEM-only dataset creation
-  - independent module skill extraction
-  - job SSOC enrichment
-  - canonical skill mapping
-  - alignment
-- Note the design choice that the STEM pipeline is now PKL-first.
-- Mention the shell shortcut:
-  - `bash src/stem_test/run_stem_full_pipeline.sh`
+### 4.1 STEM Classification and Pipeline
+
+We classify modules into STEM and non-STEM using a hybrid method that combines university-specific metadata classification with semantic text understanding at the paragraph, sentence and keyword levels. Firstly, we mapped modules offered by each university’s STEM-focused departments/faculties as STEM.
+
+For all other modules, we ran an **embedding-based paragraph classifier**, considering the semantic meaning of the module title and description. We used `sentence-transformers` to compare module embeddings with manually constructed STEM and non-STEM prototype centroid texts. The model calculated `stem_similarity`, `non_stem_similarity`, and `margin = stem_similarity - non_stem_similarity`. If `margin` is strongly negative (`<= -2%`, suggesting non-STEM dominates), we block the STEM override. For strongly positive margin (`>= 6%`, suggesting STEM dominates), we classify as a STEM module. This prevents isolated STEM keywords like “regression” influencing clearly non-STEM contexts.
+
+For non-decisive paragraph semantics (`-2% < margin < 6%`), we evaluate **sentence-level semantic scoring** as a tie-breaker. We compare each sentence’s STEM vs non-STEM similarity margin and count supporting versus opposing sentences using a fixed margin threshold (`±0.04`). We then apply a STEM override only if the overall document margin is non-negative and supporting evidence exceeds opposing evidence by at least one sentence (`support_count - oppose_count >= 1`).
+
+If semantic overrides still do not trigger, we apply a final keyword fallback (`quant_min_score = 2`) with contextual safeguards (false positives, quantitative-term blocklists, non-STEM context checks).
+
+Apart from the STEM-specific scoping and module extraction, the `stem_test` pipeline keeps the same downstream alignment backbone as `create_test` **[include a hyperlink!!!!]** (shared canonical framework, canonical mapper, and SSOC-based alignment). A Sankey step is also added to make the decision flow auditable.
 
 ### 4.2 Canonical Skill Framework
 
