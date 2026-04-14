@@ -352,6 +352,26 @@ For non-decisive paragraph semantics (`-2% < margin < 6%`), we evaluate **senten
 
 If semantic overrides still do not trigger, we apply a final keyword fallback (`quant_min_score = 2`) with contextual safeguards (false positives, quantitative-term blocklists, non-STEM context checks).
 
+```sankey-beta
+    "All Modules","Metadata clear STEM",3247
+    "All Modules","Enter semantic pipeline",7268
+    "Enter semantic pipeline","Paragraph STEM override",683
+    "Enter semantic pipeline","Paragraph non-STEM guard",5619
+    "Enter semantic pipeline","Enter sentence stage",966
+    "Enter sentence stage","Sentence STEM override",381
+    "Enter sentence stage","Enter keyword fallback",585
+    "Enter keyword fallback","Keyword STEM override",120
+    "Enter keyword fallback","Remain non-STEM or mixed",465
+    "Metadata clear STEM","Final STEM",3247
+    "Paragraph STEM override","Final STEM",683
+    "Sentence STEM override","Final STEM",381
+    "Keyword STEM override","Final STEM",120
+    "Paragraph non-STEM guard","Final non-STEM",5619
+    "Remain non-STEM or mixed","Final non-STEM",465
+```
+
+![Figure 2: Sankey Diagram for STEM Scope Classification](../src/stem_test/stem_1_sankey_diagram.png)
+
 Apart from the STEM-specific scoping and module extraction, the `stem_test` pipeline keeps the same downstream alignment backbone as `create_test` **[include a hyperlink!!!!]** (shared canonical framework, canonical mapper, and SSOC-based alignment). A Sankey step is also added to make the decision flow auditable. **(decide if this is necessary!!!)**
 
 ```mermaid
