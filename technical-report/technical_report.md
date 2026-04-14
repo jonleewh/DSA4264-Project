@@ -350,20 +350,22 @@ Apart from the STEM-specific scoping and module extraction, the `stem_test` pipe
 
 ### 4.2 Results
 
-On the STEM-specific dataset of 4,431 modules, the pipeline left **** empty modules, achieving a **top-1 overlap rate of 0.9998** and an **average top-1 score of 0.1571**, compared with **xxx** and **xxx** for the experimental pipeline for all modules.
+On the STEM-specific dataset of **4,431 modules**, the pipeline left **19** empty modules, achieving a **top-1 overlap rate of 0.9998** and an **average top-1 score of 0.1571**, compared with **0.5775** and **0.0410** respectively for the experimental pipeline.
 
 Table 3 summarizes the results for the STEM dataset.
 
-| Metric | Baseline | STEM Pipeline |
+| Metric | Experimental | STEM Pipeline |
 |---|---:|---:|
 | Modules evaluated | 10,507 | 4,431 |
-| Empty modules | 136 | 19 |
-| Non-empty modules | 10,371 | 4,412 |
-| Top-1 overlap rate | 0.7391 | 0.9998 |
-| Average top-1 score | 0.0647 | 0.1571 |
-| Avg canonical skills per non-empty module | 4.537 | 7.356 |
+| Empty modules | 2,819 | 19 |
+| Non-empty modules | 7,688 | 4,412 |
+| Top-1 overlap rate | 0.5775 | 0.9998 |
+| Average top-1 score | 0.0410 | 0.1571 |
+| Avg canonical skills per non-empty module | 2.419 | 7.356 |
 
-Together, the table shows that the STEM pipeline is more robust, **with xxx.**
+The STEM pipeline appears more robust because it preserves substantially more module-side skill signal, which directly improves downstream alignment quality.
+
+Having only 19 empty modules and a higher best-match strength comes from rules better matched to language patterns in technical module descriptions. This allows for more canonical skills per module, causing a higher probability of overlap with job-group skill profiles. Hence, denser and more accurate canonical skill representations produce stronger best-match alignments. The gain is therefore best interpreted as strong in-domain robustness: the STEM pipeline’s assumptions fit the STEM data distribution much better than the broader experimental setup.
 
 
 ## 5. Findings and Implications
