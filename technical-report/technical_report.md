@@ -228,9 +228,6 @@ The cleaned dataset is further processed for NLP-based skill extraction. Descrip
 #### 2.2.7 Schema Standardisation Across Universities
 Finally, the notebook harmonises data across universities by standardising column names, department representations, and text formats. The dataset adopts a consistent schema (code, title, department, description, university, and skill-related fields) and is saved as a .pkl file. Intermediate artifacts are removed, producing a compact, stable dataset suitable for downstream analysis.
 
-University counts after cleaning:
-{'NUS': 8499, 'NTU': 1817, 'SUTD': 199} 
-
 After cleaning, the final university dataset contains:
 
 - **'NUS': 8499 rows of modules**
