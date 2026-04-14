@@ -271,6 +271,12 @@ flowchart LR
     L --> N["align_module_job_canonical.py"]
     M --> N
     N --> O["module_job_alignment_canonical.json"]
+
+    classDef script fill:#dceeff,stroke:#24557a,stroke-width:1.5px,color:#102a43;
+    classDef data fill:#e8f5e9,stroke:#2f6b3a,stroke-width:1.5px,color:#183a1d;
+
+    class C,G,I,K,N,F script;
+    class A,B,D,E,H,J,L,M,O data;
 ```
 
 #### 3.1.1 Pipeline Inputs and Export Layer
