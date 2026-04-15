@@ -2,29 +2,18 @@
 
 
 # Data folders
-datasets/
-dataset/
-raw_data/
-processed_data/
-outputs/
-results/
-tmp/
+cleaned_data/
+reference/
+test/
 
-
-# Common data file formats
-*.json
-*.jsonl
-*.csv
-*.tsv
-*.parquet
-*.feather
-*.h5
-*.hdf5
-*.db
-*.sqlite
-*.pickle
-*.pkl
-
+# output files
+job_skills_cleaned_frequency.xlsx
+job_skills_raw.xlsx
+ntuCourseInfo.json
+ntuCourseList.json
+NUSModsInfo.json
+sutdCourseDescriptions.json
+sutdCourseList.json
 
 # LARGE FILES / ARCHIVES
 *.tar
