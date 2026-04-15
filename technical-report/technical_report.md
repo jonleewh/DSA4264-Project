@@ -58,8 +58,9 @@ The final output (`jobs_cleaned.pkl`) contains **7,104 postings** (**6,448 full-
 
 ##### Definition of a "good job"
 
-[text]
-
+```
+goodness of job = 0.6 * avg_salary + 0.15 * has_flexible_work + 0.15 * is_permanent_fulltime + 0.1 * vacancy_score 
+```
 #### 3.2.2 University Data Cleaning
 
 `data_cleaning_university_merged.ipynb` standardises module data from NUS, NTU and SUTD into one dataset for skill extraction and alignment analysis. Core fields such as `module code`, `title`, `description`, `department` and `university` are harmonised despite source-level schema differences, with NTU department codes mapped via a table (`ntu_dept_mapping.xlsx`).
@@ -149,7 +150,9 @@ For model selection, we primarily optimise **`top1_overlap_rate`**, while checki
 
 ![alt text](technical-report-images/3.3.4.A_image.png) 
 
-The final score is a weighted blend with **heuristic, policy-facing priorities**:
+The final alignment score is a weighted blend with **heuristic, policy-facing priorities**:
+
+`alignment_score = 0.4 * coverage + 0.25 * weighted_jaccard + 0.2 * cosine_similarity + 0.15 * (1 - gap_score)`
 
 - `coverage_top_k` gets the highest weight (**0.40**) because teaching the most demanded job-family skills is the primary objective.
 - `weighted_jaccard` gets **0.25** to reward stronger weighted overlap and penalise broad mismatch.
