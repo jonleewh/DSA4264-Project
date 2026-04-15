@@ -2,18 +2,33 @@
 
 
 # Data folders
+data/
 cleaned_data/
 reference/
 test/
+datasets/
+dataset/
+raw_data/
+processed_data/
+outputs/
+results/
+tmp/
 
-# output files
-job_skills_cleaned_frequency.xlsx
-job_skills_raw.xlsx
-ntuCourseInfo.json
-ntuCourseList.json
-NUSModsInfo.json
-sutdCourseDescriptions.json
-sutdCourseList.json
+
+# Common data file formats
+*.json
+*.jsonl
+*.csv
+*.tsv
+*.parquet
+*.feather
+*.h5
+*.hdf5
+*.db
+*.sqlite
+*.pickle
+*.pkl
+
 
 # LARGE FILES / ARCHIVES
 *.tar
@@ -59,7 +74,3 @@ env/
 .DS_Store
 Thumbs.db
 
-
-
-.DS_Store
-Thumbs.db
