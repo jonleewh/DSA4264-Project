@@ -50,7 +50,6 @@ Windows (PowerShell):
 ```powershell
 py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
-deactivate
 ```
 
 Windows (Command Prompt):
@@ -58,7 +57,6 @@ Windows (Command Prompt):
 ```bat
 py -3.11 -m venv .venv
 .\.venv\Scripts\activate
-deactivate
 ```
 
 macOS / Linux:
@@ -66,7 +64,6 @@ macOS / Linux:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-deactivate
 ```
 
 If `python3` points to an older version, use the exact interpreter name installed on your machine, such as `python3.11` or `python3.12`.
