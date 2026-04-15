@@ -23,13 +23,25 @@ git clone https://github.com/jonleewh/DSA4264-Project.git
 cd DSA4264-Project
 ```
 
-2. **Create `.env`**
+2. **Download required data files**
 
-Create a `.env` file in the repository root and include the required API key / endpoint configuration for the NUS data source:
+Please download the data files from this folder using this link.
 
+Download all required external data files from this [link](https://drive.google.com/drive/folders/1LvHggx77iSbMPJJF8hXpZKRrL_dL7ONv).
+
+It is recommended to download the folder as a `.zip` file (click "Download All" on the top-right corner) and unzip it on your local repository. Rename the unzipped folder as `data`.
+
+Then place the downloaded `data` folder in the repository root (same level as `README.md`).
+
+Expected structure:
 ```bash
-nus_api="<your_api_value_here>"
+DSA4264-Project/
+- data/
+- src/
+- README.md
 ```
+
+Important: Please keep the same internal folder/file structure as provided in the Google Drive folder.
 
 3. **Create a virtual environment**  
 Use Python 3.11 or higher.
