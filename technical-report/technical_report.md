@@ -151,12 +151,7 @@ All other components are kept fixed to isolate causal impact of the extractor ch
 
 The following examples show why this variant was tested; modules can receive more technically specific skill tags under the independent extractor.
 
-| Module | Baseline canonical skills | Experimental canonical skills | Interpretation |
-|---|---|---|---|
-| `Search Engine Optimization and Analytics` | `Marketing`, `Programming`, `Python`, `research skills` | `Algorithm Design`, `Data Analysis`, `Machine Learning`, `Optimization`, `Programming`, `Python`, `search engine optimization` | experimental is more technically specific |
-| `Biology Laboratory` | `ecological design`, `genetic engineering`, `research skills` | `Laboratory Skills`, `Research`, `life science research`, `research lab` | experimental is more domain-faithful |
-| `From DNA to Gene Therapy` | `Project Management`, `fieldwork`, `genetic engineering`, `research skills` | empty | experimental is too brittle at scale |
-
+![alt text](technical-report-images/3.3.2_image.png)
 
 #### 3.3.3 STEM Robustness Pipeline
 
@@ -194,7 +189,7 @@ For model selection, we primarily optimise **`top1_overlap_rate`**, while checki
 
 **A. Alignment component metrics (used inside module-job scoring)**
 
-![alt text](technical-report-images/Alignment_component_metrics.png) 
+![alt text](technical-report-images/3.3.4.A_image.png) 
 
 **Weighting rationale for final alignment score**
 
@@ -208,21 +203,8 @@ The final score is a weighted blend with **heuristic, policy-facing priorities**
 This weighting reflects the intended decision logic: **prioritise core-skill coverage first, then refine with broader similarity and explicit gap penalties**.
 
 **B. Pipeline-level evaluation metrics (reported at dataset level)**
-
-| Metric | Definition | Calculation | Rationale |
-|---|---|---|---|
-| `module_count` | Total modules evaluated | Count all modules entering alignment | Confirms analysis scope |
-| `empty_modules` | Modules with no canonical skills after processing | Count modules that end with empty skill profiles | Key robustness/coverage failure signal |
-| `job_group_count` | Number of job families available for matching | Count SSOC-3 groups with usable profiles | Confirms labour-market coverage |
-| `top1_positive_modules` | Modules with a non-zero best match | Count modules whose best match has positive alignment | Basic viability of matching |
-| `top1_overlap_modules` | Modules whose best match has explicit shared skills | Count modules whose best match has non-empty strict overlap | Credible skill-grounded linkage |
-| `top1_positive_rate` | Share of modules with any viable best match | Divide `top1_positive_modules` by total modules | Dataset-level matching viability |
-| `top1_overlap_rate` | Share of modules with explicit skill overlap in top match | Divide `top1_overlap_modules` by total modules | **Primary optimisation metric** |
-| `average_top1_score` | Mean strength of best matches | Average the top-1 alignment score across matched modules | Indicates overall matching quality |
-| `average_top1_good_job_pct` | Quality profile of best-matched job families | Average job-quality percentage of top-1 matches | Connects alignment to job-quality context |
-| `average_top1_quality_weighted_alignment` | Alignment quality adjusted by job quality | Average quality-weighted top-1 alignment | Rewards alignment to better entry-level opportunities |
-| `average_top3_weighted_good_job_pct` | Quality signal across top-3 matches | For each module, compute score-weighted quality across top-3, then average | Less brittle than single-match quality view |
-
+  
+![alt text](technical-report-images/3.3.4.B_image.png)
 
 ## 4. Findings
 
@@ -230,14 +212,7 @@ This weighting reflects the intended decision logic: **prioritise core-skill cov
 
 Table X compares the three pipelines on common dataset-level metrics.
 
-| Metric | Baseline | Experimental | STEM Pipeline |
-|---|---:|---:|---:|
-| Modules evaluated | 10,507 | 10,507 | 4,431 |
-| Empty modules | 136 | 2,819 | 19 |
-| Non-empty modules | 10,371 | 7,688 | 4,412 |
-| Top-1 overlap rate | 0.7391 | 0.5775 | 0.9998 |
-| Average top-1 score | 0.0647 | 0.0410 | 0.1571 |
-| Avg canonical skills per non-empty module | 4.537 | 2.419 | 7.356 |
+![alt text](technical-report-images/4.1_image.png)
 
 The pattern is clear: the baseline is the strongest **general-purpose** pipeline, the experimental variant is more specific in selected cases but less robust, and the STEM pipeline is strongest **within a narrowed STEM scope**.
 
