@@ -185,13 +185,16 @@ The final distribution of skill counts is plausible for job postings:
 
 The notebook also exports raw and cleaned skill-frequency tables to Excel, which is valuable for stakeholder review. Non-technical reviewers can inspect the vocabulary and challenge cleaning rules if necessary, making the process more governable.
 
-#### 2.1.7 Output Structure and Reusability
+#### 2.1.7 Evaluating Goodness of Job 
+**to be added back after section is restored in notebook!!!**
+
+#### 2.1.8 Output Structure and Reusability
 
 The cleaned dataset is saved as `data/cleaned_data/jobs_cleaned.pkl`. Before saving, the notebook drops intermediate helper columns and reorders the final schema so downstream consumers receive a compact, consistent table.
 
 This is good execution practice. Instead of passing along every temporary artifact created during cleaning, the notebook separates internal processing columns from production-facing outputs. That makes later analysis cleaner and reduces accidental dependency on unstable intermediate fields.
 
-#### 2.1.8 Descriptive Validation and Exploratory Analysis
+#### 2.1.9 Descriptive Validation and Exploratory Analysis
 
 The second half of the notebook performs descriptive analysis on the cleaned data. This is not merely exploratory; it acts as a validation layer. If the top titles, skill distributions, and data-role patterns were obviously implausible, that would signal a problem in the cleaning pipeline.
 
@@ -208,28 +211,31 @@ These summaries directly support the broader project objective. They show what e
 ### 2.2 University Data Cleaning
 
 #### 2.2.1 University Course Cleaning Methodology
+The notebook follows a structured data engineering workflow to transform raw, semi-structured course data into an analysis-ready dataset. It begins by ingesting module data from multiple universities and standardising heterogeneous schemas into a unified tabular format. Textual fields such as titles, descriptions, and departments are cleaned and normalised, after which the dataset is filtered to retain undergraduate-relevant modules. Noisy or low-quality records are removed, and the cleaned text is prepared for downstream NLP tasks such as skill extraction. The final dataset is persisted as a structured output, with validation checks performed to ensure plausibility. This workflow separates data preparation from analysis while maintaining transparency within a single notebook.
 
-- Add a matching methodology subsection for `data_cleaning_university_merged.ipynb`.
-- Describe the course-side data sources:
-  - NUSMods API
-  - NTU scraper outputs and department mapping
-  - SUTD scraper outputs
-- Explain how module descriptions were cleaned and standardized.
-- Document the cleaned course schema:
-  - `code`
-  - `title`
-  - `department`
-  - `description`
-  - `university`
-  - skill-related fields stored in the cleaned PKL
-- Explain how module-side skills were produced in the notebook:
-  - `skills_embedding`
-  - `hard_skills`
-  - `soft_skills`
-- Add university-side data-quality issues:
-  - missing descriptions from NTU and SUTD
-  - uneven metadata richness across universities
-  - department or faculty inconsistencies
+#### 2.2.2 Project-Wide Pipeline Overview
+At a system level, this notebook forms part of a broader end-to-end pipeline. The process spans raw module data acquisition (from NUS, NTU, and SUTD), preprocessing and scraping, notebook-based cleaning, and construction of a unified dataset. This dataset feeds into skill extraction and canonical skill mapping, which are then aligned with job-side skill demand for downstream analytics such as curriculum–labour market comparison. The cleaned dataset serves as the source of truth for all subsequent workflows, ensuring consistency across the project.
+
+#### 2.2.3 Data Collection and Ingestion
+Module data is loaded from multiple sources and consolidated into a unified structure despite differences in schemas and formatting. NUS data is obtained via API, while NTU and SUTD data are sourced from scraper outputs, with NTU department codes mapped to full names using an external lookup table. Key fields—module code, title, description, and department—are extracted and standardised, and a university column is added to preserve provenance.
+
+#### 2.2.4 Text Cleaning and Normalisation
+Given the inconsistency of module descriptions, extensive text cleaning is applied. This includes lowercasing, spelling standardisation, HTML removal using BeautifulSoup, elimination of invalid Unicode characters, and whitespace normalisation. These steps ensure that textual data reflects meaningful content rather than formatting artefacts, which is critical for downstream NLP tasks.
+
+#### 2.2.5 Targeted Filtering for Undergraduate Modules
+To align with project objectives, the dataset is filtered to retain only undergraduate-relevant modules. Modules with very short descriptions are removed, along with those from irrelevant faculties and postgraduate programmes identified through title and description cues. Rows with missing essential fields are also excluded. This ensures that the dataset reflects curriculum content relevant to entry-level job demand.
+
+#### 2.2.6 Preparation for Skill Extraction
+The cleaned dataset is further processed for NLP-based skill extraction. Descriptions are tokenised into manageable units, word counts are computed robustly, and text is normalised to reduce variation. This preprocessing ensures compatibility with embedding-based models such as MiniLM, preserving semantic signals while minimising noise.
+
+#### 2.2.7 Schema Standardisation Across Universities
+Finally, the notebook harmonises data across universities by standardising column names, department representations, and text formats. The dataset adopts a consistent schema (code, title, department, description, university, and skill-related fields) and is saved as a .pkl file. Intermediate artifacts are removed, producing a compact, stable dataset suitable for downstream analysis.
+
+After cleaning, the final university dataset contains:
+
+- **'NUS': 8499 rows of modules**
+- **'NTU': 1817 rows of modules**
+- **'SUTD': 199 rows of module**
 
 ## 3. General Pipeline
 
@@ -346,27 +352,72 @@ For non-decisive paragraph semantics (`-2% < margin < 6%`), we evaluate **senten
 
 If semantic overrides still do not trigger, we apply a final keyword fallback (`quant_min_score = 2`) with contextual safeguards (false positives, quantitative-term blocklists, non-STEM context checks).
 
-Apart from the STEM-specific scoping and module extraction, the `stem_test` pipeline keeps the same downstream alignment backbone as `create_test` **[include a hyperlink!!!!]** (shared canonical framework, canonical mapper, and SSOC-based alignment). A Sankey step is also added to make the decision flow auditable.
+![Figure 2: Sankey Diagram for STEM Scope Classification](../src/stem_test/stem_1_sankey_diagram.png)
+
+Apart from the STEM-specific scoping and module extraction, the `stem_test` pipeline keeps the same downstream alignment backbone as `create_test` **[include a hyperlink!!!!]** (shared canonical framework, canonical mapper, and SSOC-based alignment).
+
+```mermaid
+flowchart LR
+    A["combined_courses_cleaned.pkl"] --> S1["stem_1_generate_scope_classifications.py"]
+    S1 --> S2["stem_1_scope_classifier.py"]
+    S2 --> S3["stem_1_generate_sankey.py"]
+    S3 --> S4["stem_2_create_test_datasets.py"]
+
+    B["jobs_cleaned.pkl"] --> S4
+    S4 --> D["module_descriptions_test_STEM.json"]
+    S4 --> E["job_descriptions_test_STEM.json"]
+
+    F["module_skill_rules.py"] --> G["stem_5_build_canonical_skill_framework.py"]
+    G --> H["canonical_skill_framework_v4.json"]
+
+    D --> X["stem_3_extract_module_skills_independent.py"]
+    X --> Y["module_descriptions_test_with_skills_independent_STEM.jsonl"]
+
+    E --> I["stem_4_extract_job_ssoc3_from_original.py"]
+    I --> J["job_ssoc345_with_skills_from_original_STEM.jsonl"]
+
+    Y --> K["stem_6_canonical_skill_mapper.py --map-stem-pipeline"]
+    J --> K
+    H --> K
+    K --> L["module_skills_canonical_stem.jsonl"]
+    K --> M["job_skills_canonical_stem.jsonl"]
+
+    L --> N["stem_8_align_module_job_canonical.py"]
+    M --> N
+    N --> O["module_job_alignment_STEM.json"]
+
+    classDef script fill:#dceeff,stroke:#24557a,stroke-width:1.5px,color:#102a43;
+    classDef data fill:#e8f5e9,stroke:#2f6b3a,stroke-width:1.5px,color:#183a1d;
+
+    class S1,S2,S3,S4,G,X,I,K,N,F script;
+    class A,B,D,E,H,Y,J,L,M,O data;
+
+```
 
 ### 4.2 Results
 
-On the STEM-specific dataset of 4,431 modules, the pipeline left **** empty modules, achieving a **top-1 overlap rate of 0.9998** and an **average top-1 score of 0.1571**, compared with **xxx** and **xxx** for the experimental pipeline for all modules.
+The STEM-specific dataset has **4,431 modules** and **19** empty modules, achieving a **top-1 overlap rate of 0.9998** and an **average top-1 score of 0.1571**, compared with **0.5775** and **0.0410** respectively for the experimental pipeline.
 
 Table 3 summarizes the results for the STEM dataset.
 
-| Metric | Baseline | STEM Pipeline |
+| Metric | Experimental | STEM Pipeline |
 |---|---:|---:|
 | Modules evaluated | 10,507 | 4,431 |
-| Empty modules | 136 | 19 |
-| Non-empty modules | 10,371 | 4,412 |
-| Top-1 overlap rate | 0.7391 | 0.9998 |
-| Average top-1 score | 0.0647 | 0.1571 |
-| Avg canonical skills per non-empty module | 4.537 | 7.356 |
+| Empty modules | 2,819 | 19 |
+| Non-empty modules | 7,688 | 4,412 |
+| Top-1 overlap rate | 0.5775 | 0.9998 |
+| Average top-1 score | 0.0410 | 0.1571 |
+| Avg canonical skills per non-empty module | 2.419 | 7.356 |
 
-Together, the table shows that the STEM pipeline is more robust, **with xxx.**
+The STEM pipeline appears more robust because it preserves substantially more module-side skill signal, which directly improves downstream alignment quality.
+
+Having only 19 empty modules and a higher best-match strength comes from rules better matched to language patterns in technical module descriptions. This allows for more canonical skills per module, causing a higher probability of overlap with job-group skill profiles. Hence, denser and more accurate canonical skill representations produce stronger best-match alignments. The gain is therefore best interpreted as strong in-domain robustness: the STEM pipeline’s assumptions fit the STEM data distribution much better than the broader experimental setup.
+
 
 
 ## 5. Findings and Implications
+
+**Talk about the low alignment scores**
 
 ### 5.1 Robustness
 
@@ -433,7 +484,7 @@ These do not undermine the core cleaning pipeline, but they are important if the
 
 ### 6.1 Limitations, Biases, and Ethical Considerations
 
-Our jobs data is limited in scope and timeframe. We only used job descriptions from **MyCareersFuture** over **one week**. Hence, our findings may be limited in relevance; changes in labour-market trends over time may reduce comparability if the framework is not periodically refreshed.
+Our **jobs data** is limited in scope and timeframe. We only used job descriptions from **MyCareersFuture** over **one week**. Hence, our findings may be limited in relevance; changes in labour-market trends over time may reduce comparability if the framework is not periodically refreshed.
 
 Additionally, the graduate filter is rule-based. Using `minimum_years_experience` in `{0,1}` is practical, but employers may wronglyindicate the filter wrongly graduate-suitable jobs may require 2 years, while some 0-1 year roles may still be unsuitable for typical undergraduates. Besides, human errors from employers in wrongly selecting 0-1 year roles may exist.
 
@@ -443,13 +494,13 @@ Our skill extraction depends on employer-supplied structured skill fields. Emplo
 
 The data-role subset is small at 29 postings. It is useful for illustration, but not yet strong enough for high-confidence sectoral conclusions.
 
-Fifth, the notebook supports public-sector analysis but does not by itself resolve fairness concerns. For example, if certain industries systematically omit salary data or structured skills, the cleaned dataset may underrepresent them in downstream comparisons. Policymakers should treat the outputs as directional evidence rather than ground truth.
-
-For module descriptions, we focused on three universities as these datasets were most accessible. We extracted skills purely based on generic module descriptions, which may not fully capture teaching quality, learning outcomes or pedagogical depth. Additionally, our STEM scope classification is rule-based and inherits the limitations of department-level labeling.
+For **module descriptions**, we focused on three universities as these datasets were most accessible. We extracted skills purely based on generic module descriptions, which may not fully capture teaching quality, learning outcomes or pedagogical depth. Additionally, our STEM scope classification is rule-based and inherits the limitations of department-level labeling.
 
 Canonical skill mapping introduces its own abstraction layer, which may merge distinct competencies or preserve distinctions that are not meaningful to employers.
 
 Module-job alignment scores are similarity-based and should not be interpreted as causal measures of programme effectiveness.
+
+**Is this relevant?:** The notebook supports public-sector analysis but does not by itself resolve fairness concerns. For example, if certain industries systematically omit salary data or structured skills, the cleaned dataset may underrepresent them in downstream comparisons. Policymakers should treat the outputs as directional evidence rather than ground truth.
 
 
 Ethical considerations to add:
@@ -458,6 +509,8 @@ Ethical considerations to add:
 - Note that course-job alignment should not be the only basis for judging educational value.
 - Acknowledge the risk that humanities or interdisciplinary programmes may look weaker under a purely skill-overlap framing.
 - Emphasise the importance of human review before using the outputs for high-stakes policy decisions.
+
+
 
 ### 6.2 Future Areas for Improvement
 
