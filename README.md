@@ -75,9 +75,9 @@ This also installs the Jupyter dependencies used by the notebooks.
 Run these from the repository root in this order:
 
 ```bash
+python src/scrappers/NUSModsAPI.py
 python src/scrappers/NTUMods.py
 python src/scrappers/NTUModsDesc.py
-python src/scrappers/NUSModsAPI.py
 python src/scrappers/SUTDCourses.py
 python src/scrappers/SUTDDesc.py
 ```
