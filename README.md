@@ -23,18 +23,7 @@ git clone https://github.com/jonleewh/DSA4264-Project.git
 cd DSA4264-Project
 ```
 
-2. **Install the required data files**
-
-Place these files in the project before running the pipelines:
-
-- `problem2.zip`
-  - extract its contents so the raw job data ends up under `data/data/`
-- `ssoc2020.xlsx`
-  - place in `data/`
-- `ntu_dept_mapping.xlsx`
-  - place in `data/`
-
-3. **Create `.env`**
+2. **Create `.env`**
 
 Create a `.env` file in the repository root and include the required API key / endpoint configuration for the NUS data source:
 
@@ -42,7 +31,7 @@ Create a `.env` file in the repository root and include the required API key / e
 nus_api="<your_api_value_here>"
 ```
 
-4. **Create a virtual environment**  
+3. **Create a virtual environment**  
 Use Python 3.11 or higher.
 
 Windows (PowerShell):
@@ -50,7 +39,6 @@ Windows (PowerShell):
 ```powershell
 py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
-deactivate
 ```
 
 Windows (Command Prompt):
@@ -58,7 +46,6 @@ Windows (Command Prompt):
 ```bat
 py -3.11 -m venv .venv
 .\.venv\Scripts\activate
-deactivate
 ```
 
 macOS / Linux:
@@ -66,12 +53,11 @@ macOS / Linux:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-deactivate
 ```
 
 If `python3` points to an older version, use the exact interpreter name installed on your machine, such as `python3.11` or `python3.12`.
 
-5. **Install dependencies**
+4. **Install dependencies**
 
 ```bash
 python -m pip install --upgrade pip
