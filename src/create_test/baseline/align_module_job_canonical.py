@@ -73,12 +73,17 @@ def alignment_score(coverage: float, wj: float, cos: float, gap: float) -> float
     return max(0.0, min(1.0, score))
 
 
+def quality_weighted_alignment(alignment: float, good_job_pct: float) -> float:
+    return alignment * good_job_pct
+
+
 def build_job_profiles(job_rows: list[dict], ssoc_level: str):
     code_key = f"ssoc_{ssoc_level}_code"
     title_key = f"ssoc_{ssoc_level}_title"
     buckets = defaultdict(list)
     titles = {}
     counts = Counter()
+    good_counts = Counter()
 
     for row in job_rows:
         code = row.get(code_key)
@@ -91,14 +96,20 @@ def build_job_profiles(job_rows: list[dict], ssoc_level: str):
         buckets[code].extend(skills)
         titles[code] = row.get(title_key, "")
         counts[code] += 1
+        good_counts[code] += int(bool(row.get("is_good_job")))
 
     profiles = {}
     for code, skills in buckets.items():
         counter = Counter(skills)
+        job_count = counts[code]
+        good_job_count = good_counts[code]
+        good_job_pct = round((good_job_count / job_count), 4) if job_count else 0.0
         profiles[code] = {
             "ssoc_code": code,
             "ssoc_title": titles.get(code, ""),
-            "job_count": counts[code],
+            "job_count": job_count,
+            "good_job_count": good_job_count,
+            "good_job_pct": good_job_pct,
             "skill_counter": counter,
             "skill_weights": normalize_counter(counter),
         }
@@ -119,11 +130,14 @@ def score_module_against_profiles(module_skills: list[str], profiles: dict[str, 
         gap = gap_score(module_counter, job_counter, top_k_job_skills)
         score = alignment_score(coverage, wj, cos, gap)
         overlap = sorted(set(module_counter) & set(job_counter))
+        quality_weighted_score = quality_weighted_alignment(score, profile["good_job_pct"])
         matches.append(
             {
                 "ssoc_code": code,
                 "ssoc_title": profile["ssoc_title"],
                 "job_count": profile["job_count"],
+                "good_job_count": profile["good_job_count"],
+                "good_job_pct": profile["good_job_pct"],
                 "strict_overlap_count": len(overlap),
                 "strict_overlap": overlap,
                 "coverage_top_k": round(coverage, 4),
@@ -131,6 +145,7 @@ def score_module_against_profiles(module_skills: list[str], profiles: dict[str, 
                 "cosine_similarity": round(cos, 4),
                 "gap_score": round(gap, 4),
                 "alignment_score": round(score, 4),
+                "quality_weighted_alignment_score": round(quality_weighted_score, 4),
             }
         )
 
@@ -143,6 +158,79 @@ def score_module_against_profiles(module_skills: list[str], profiles: dict[str, 
         reverse=True,
     )
     return matches[:top_n_matches]
+
+
+def topk_weighted_good_job_pct(matches: list[dict], top_k: int = 3) -> float:
+    selected = matches[:top_k]
+    if not selected:
+        return 0.0
+    total_weight = sum(match["alignment_score"] for match in selected)
+    if total_weight <= 0:
+        return 0.0
+    return sum(match["alignment_score"] * match["good_job_pct"] for match in selected) / total_weight
+
+
+def summarize_departments(results: list[dict]) -> list[dict]:
+    buckets: dict[tuple[str, str], list[dict]] = defaultdict(list)
+    for row in results:
+        source = row.get("source") or ""
+        department = row.get("department") or ""
+        buckets[(source, department)].append(row)
+
+    summaries = []
+    for (source, department), rows in buckets.items():
+        module_count = len(rows)
+        empty_modules = sum(1 for row in rows if not row.get("canonical_skills"))
+        rows_with_matches = [row for row in rows if row.get("top_matches")]
+        top1_overlap_modules = sum(
+            1 for row in rows_with_matches if row["top_matches"][0].get("strict_overlap_count", 0) > 0
+        )
+        avg_top1_score = (
+            sum(row["top_matches"][0]["alignment_score"] for row in rows_with_matches) / len(rows_with_matches)
+            if rows_with_matches
+            else 0.0
+        )
+        avg_top1_good_job_pct = (
+            sum(row["top_matches"][0]["good_job_pct"] for row in rows_with_matches) / len(rows_with_matches)
+            if rows_with_matches
+            else 0.0
+        )
+        avg_top1_quality_weighted_alignment = (
+            sum(row["top_matches"][0]["quality_weighted_alignment_score"] for row in rows_with_matches) / len(rows_with_matches)
+            if rows_with_matches
+            else 0.0
+        )
+        avg_top3_weighted_good_job_pct = (
+            sum(row.get("top3_weighted_good_job_pct", 0.0) for row in rows_with_matches) / len(rows_with_matches)
+            if rows_with_matches
+            else 0.0
+        )
+
+        summaries.append(
+            {
+                "source": source,
+                "department": department,
+                "module_count": module_count,
+                "empty_modules": empty_modules,
+                "empty_module_rate": round(empty_modules / module_count, 4) if module_count else 0.0,
+                "top1_overlap_modules": top1_overlap_modules,
+                "top1_overlap_rate": round(top1_overlap_modules / module_count, 4) if module_count else 0.0,
+                "average_top1_score": round(avg_top1_score, 4),
+                "average_top1_good_job_pct": round(avg_top1_good_job_pct, 4),
+                "average_top1_quality_weighted_alignment": round(avg_top1_quality_weighted_alignment, 4),
+                "average_top3_weighted_good_job_pct": round(avg_top3_weighted_good_job_pct, 4),
+            }
+        )
+
+    summaries.sort(
+        key=lambda item: (
+            item["average_top1_quality_weighted_alignment"],
+            item["average_top1_score"],
+            item["module_count"],
+        ),
+        reverse=True,
+    )
+    return summaries
 
 
 def main():
@@ -179,12 +267,16 @@ def main():
         if matches and matches[0]["strict_overlap_count"] > 0:
             top1_overlap += 1
 
+        top3_weighted_good_job_pct = topk_weighted_good_job_pct(matches, top_k=3)
+
         results.append(
             {
                 "module_id": row.get("id"),
                 "source": row.get("source"),
+                "department": row.get("department"),
                 "title": row.get("title"),
                 "canonical_skills": skills,
+                "top3_weighted_good_job_pct": round(top3_weighted_good_job_pct, 4),
                 "top_matches": matches,
             }
         )
@@ -201,11 +293,26 @@ def main():
             sum(r["top_matches"][0]["alignment_score"] for r in results if r["top_matches"]) / len(results),
             4,
         ) if results else 0.0,
+        "average_top1_good_job_pct": round(
+            sum(r["top_matches"][0]["good_job_pct"] for r in results if r["top_matches"]) / len(results),
+            4,
+        ) if results else 0.0,
+        "average_top1_quality_weighted_alignment": round(
+            sum(r["top_matches"][0]["quality_weighted_alignment_score"] for r in results if r["top_matches"]) / len(results),
+            4,
+        ) if results else 0.0,
+        "average_top3_weighted_good_job_pct": round(
+            sum(r["top3_weighted_good_job_pct"] for r in results if r["top_matches"]) / len(results),
+            4,
+        ) if results else 0.0,
     }
+
+    department_summary = summarize_departments(results)
 
     payload = {
         "ssoc_level": args.ssoc_level,
         "summary": summary,
+        "department_summary": department_summary,
         "results": results,
     }
 
