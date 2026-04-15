@@ -55,16 +55,7 @@ Finally, STEM robustness analysis assumes that reducing cross-domain heterogenei
 
 `data_cleaning_jobs_merged.ipynb` follows a standard data engineering pattern:
 
-```mermaid
-flowchart LR
-    A["Ingest **22,718** raw records"] --> B["Standardise schema"]
-    B --> C["Apply policy-relevant filters"]
-    C --> D["Engineer labour features"]
-    D --> E["Rating goodness of job"]
-    E --> F["Clean skills"]
-    F --> G["Persist analysis-ready outputs"]
-    G --> H["Run descriptive validation checks"]
-```
+![alt text](technical-report-images/3.2.1_image.png)
 
 `data_cleaning_jobs_merged.ipynb` converts 22,718 raw postings into an analysis-ready job dataset focused on **entry-level demand**. Records are first flattened into a standard schema (job metadata, text fields, salary, and SSOC codes), and HTML is removed from descriptions to reduce formatting noise.
 
@@ -88,12 +79,7 @@ For NLP readiness, cleaned descriptions are tokenised and normalised for robust 
 
 A shared canonical framework (`canonical_skill_framework_v4.json`) standardises both module and job skills before alignment. The framework contains **89 canonical skills** and **24 excluded phrases**, with aliases, types, and notes.
 
-```mermaid
-flowchart LR
-    A["Text normalisation"] --> B["Excluded-phrase checks"]
-    B --> C["Exact/alias mapping"]
-    C --> D["Semantic fallback: all-MiniLM-L6-v2 (cosine threshold = 0.72)"]
-```
+![alt text](technical-report-images/3.2.3_image.png)
 
 This staged process improves cross-source comparability while limiting brittle phrase mismatch. `module_skill_rules.py` provides additional phrase-to-skill rules, allowed labels, and blocklists to improve consistency on the module side.
 
@@ -106,31 +92,7 @@ Our baseline, experimental and STEM pipeline convert cleaned modules and jobs in
 
 The baseline workflow (`src/create_test/run_baseline_pipeline.sh`) starts from two cleaned sources: course modules (`combined_courses_cleaned.pkl`) and jobs (`jobs_cleaned.pkl`).
 
-```mermaid
-flowchart LR
-    A["combined_courses_cleaned.pkl"] --> C["create_test_datasets.py"]
-    B["jobs_cleaned.pkl"] --> C["create_test_datasets.py"]
-    C --> D["module_descriptions_test.jsonl"]
-    C --> E["job_descriptions_test.jsonl"]
-    F["module_skill_rules.py"] --> G["build_canonical_skill_framework.py"]
-    G --> H["canonical_skill_framework_v4.json"]
-    E --> I["extract_job_ssoc3_from_original.py"]
-    I --> J["job_ssoc345_with_skills_from_original.jsonl"]
-    D --> K["canonical_skill_mapper.py"]
-    J --> K["canonical_skill_mapper.py"]
-    H --> K
-    K --> L["module_skills_canonical.jsonl"]
-    K --> M["job_skills_canonical.jsonl"]
-    L --> N["align_module_job_canonical.py"]
-    M --> N
-    N --> O["module_job_alignment_canonical.json"]
-
-    classDef script fill:#dceeff,stroke:#24557a,stroke-width:1.5px,color:#102a43;
-    classDef data fill:#e8f5e9,stroke:#2f6b3a,stroke-width:1.5px,color:#183a1d;
-
-    class C,G,I,K,N,F script;
-    class A,B,D,E,H,J,L,M,O data;
-```
+![alt text](technical-report-images/3.3.1_image.png)
 
 The pipeline has four key stages.
 
