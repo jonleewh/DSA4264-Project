@@ -60,7 +60,7 @@ flowchart LR
     A["Ingest **22,718** raw records"] --> B["Standardise schema"]
     B --> C["Apply policy-relevant filters"]
     C --> D["Engineer labour features"]
-    D --> E["Rating "Goodness" of job"]
+    D --> E["Rating goodness of job"]
     E --> F["Clean skills"]
     F --> G["Persist analysis-ready outputs"]
     G --> H["Run descriptive validation checks"]
