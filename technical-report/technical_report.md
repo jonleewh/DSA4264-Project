@@ -194,7 +194,7 @@ For model selection, we primarily optimise **`top1_overlap_rate`**, while checki
 
 **A. Alignment component metrics (used inside module-job scoring)**
 
-![alt text](technical-report-images/Alignment_component_metrics.png)
+![alt text](technical-report-images/Alignment_component_metrics.png) 
 
 **Weighting rationale for final alignment score**
 
