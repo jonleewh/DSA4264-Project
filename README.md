@@ -25,21 +25,11 @@ cd DSA4264-Project
 
 2. **Download required data files**
 
-Please download the data files from this folder using this link.
-
 Download all required external data files from this [link](https://drive.google.com/drive/folders/1LvHggx77iSbMPJJF8hXpZKRrL_dL7ONv).
 
-It is recommended to download the folder as a `.zip` file (click "Download All" on the top-right corner) and unzip it on your local repository. Rename the unzipped folder as `data`.
+It is recommended to download the folder as a `.zip` file (click "Download All" on the top-right corner) and unzip it on your local repository.
 
-Then place the downloaded `data` folder in the repository root (same level as `README.md`).
-
-Expected structure:
-```bash
-DSA4264-Project/
-- data/
-- src/
-- README.md
-```
+Then place the downloaded `data` folder in the repository root (same level as this `README.md` file).
 
 Important: Please keep the same internal folder/file structure as provided in the Google Drive folder.
 
