@@ -194,14 +194,7 @@ For model selection, we primarily optimise **`top1_overlap_rate`**, while checki
 
 **A. Alignment component metrics (used inside module-job scoring)**
 
-![alt text](image.png)
-| Metric | What it means in context | How it is calculated (intuitive) | Why it matters |
-|---|---|---|---|
-| `strict_overlap` | The exact shared canonical skills between a module and a job family | List the canonical skills that appear in both profiles | Makes matches explainable and helps diagnose false positives/negatives |
-| `coverage_top_k` | Whether the module covers the job family’s most important skills | Take the job family’s top-demand skills and check how many are present in the module | Best signal for curriculum relevance to core labour-market demand |
-| `weighted_jaccard` | Overlap quality after accounting for skill importance/frequency | Compare shared vs non-shared skill weight, not just skill counts | Captures both overlap and mismatch magnitude |
-| `cosine_similarity` | Overall similarity of full skill profiles | Compare the full module and job-family skill patterns after normalisation | Useful when there is partial overlap but similar profile shape |
-| `gap_score` | Missing demand from the job-family side | Measure how much high-weight job-family skill mass is absent from the module | Directly quantifies curriculum skill deficits |
+![alt text](technical-report-images/Alignment_component_metrics.png) 
 
 **Weighting rationale for final alignment score**
 
