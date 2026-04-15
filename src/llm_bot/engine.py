@@ -16,6 +16,8 @@ JOBS_PATH = PROJECT_ROOT / "data" / "cleaned_data" / "jobs_cleaned.pkl"
 BASELINE_DATA_DIR = PROJECT_ROOT / "data" / "test"
 MODULE_CANONICAL_PATH = BASELINE_DATA_DIR / "module_skills_canonical.jsonl"
 JOB_CANONICAL_PATH = BASELINE_DATA_DIR / "job_skills_canonical.jsonl"
+MIN_FULL_BASELINE_MODULES = 2000
+MIN_FULL_BASELINE_JOBS = 2000
 
 STOPWORDS = {
     "a",
@@ -383,12 +385,26 @@ class LocalJobCourseBot:
             if post_id:
                 self.jobs_canonical_by_post_id[post_id] = job_row
 
+        status_message = (
+            "Using baseline canonical skill outputs for all-subject university module recommendations."
+        )
+        is_sampled = (
+            len(module_rows) < MIN_FULL_BASELINE_MODULES
+            or len(job_rows) < MIN_FULL_BASELINE_JOBS
+        )
+        if is_sampled:
+            status_message += (
+                " Warning: these baseline outputs look sampled rather than full, "
+                "so recommendations may be noticeably weaker."
+            )
+
         return {
             "available": True,
-            "message": (
-                "Using baseline canonical skill outputs for all-subject university module recommendations."
-            ),
+            "message": status_message,
             "missing_paths": [],
+            "module_row_count": len(module_rows),
+            "job_row_count": len(job_rows),
+            "is_sampled": is_sampled,
         }
 
     def _build_skill_vocabulary(self) -> list[str]:
@@ -626,6 +642,9 @@ class LocalJobCourseBot:
                 "message": self.canonical_data_status["message"],
                 "missing_paths": self.canonical_data_status["missing_paths"],
                 "canonical_job_match_count": 0,
+                "module_row_count": self.canonical_data_status.get("module_row_count", 0),
+                "job_row_count": self.canonical_data_status.get("job_row_count", 0),
+                "is_sampled": self.canonical_data_status.get("is_sampled", False),
             }
 
         job_counter, job_weights, matched_post_ids = self._build_canonical_job_profile(ranked_jobs)
@@ -638,6 +657,9 @@ class LocalJobCourseBot:
                 ),
                 "missing_paths": [],
                 "canonical_job_match_count": 0,
+                "module_row_count": self.canonical_data_status.get("module_row_count", 0),
+                "job_row_count": self.canonical_data_status.get("job_row_count", 0),
+                "is_sampled": self.canonical_data_status.get("is_sampled", False),
             }
 
         recommendations = []
@@ -712,6 +734,9 @@ class LocalJobCourseBot:
             "missing_paths": [],
             "canonical_job_match_count": len(matched_post_ids),
             "school_filter": intent.school_filter if intent else None,
+            "module_row_count": self.canonical_data_status.get("module_row_count", 0),
+            "job_row_count": self.canonical_data_status.get("job_row_count", 0),
+            "is_sampled": self.canonical_data_status.get("is_sampled", False),
         }
 
     def _build_summary(
