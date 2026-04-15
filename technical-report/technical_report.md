@@ -81,7 +81,7 @@ The final output (`jobs_cleaned.pkl`) contains **7,104 postings** (**6,448 full-
 
 Text cleaning removes noise and improves comparability across institutions: descriptions are lowercased, spelling/formatting inconsistencies are normalised, HTML and invalid Unicode artefacts are stripped, and whitespace is standardised. The dataset is then filtered to undergraduate-relevant content by removing records with missing critical fields, very short descriptions, and modules flagged as postgraduate or out-of-scope faculties.
 
-For NLP readiness, cleaned descriptions are tokenised and normalised for robust word-count and embedding-based processing. The notebook then saves a unified, consistent dataset (including provenance fields) as the source of truth for downstream skill mapping and curriculum-job matching. Final retained counts are **8,499** (NUS), **1,817** (NTU), and **199** (SUTD) modules.
+For NLP readiness, cleaned descriptions are tokenised and normalised for robust word-count and embedding-based processing. The notebook then saves a unified, consistent dataset (including provenance fields) as the source of truth for downstream skill mapping and curriculum-job matching. The final output (`combined_courses_cleaned.pkl`) retained counts are **8,499** (NUS), **1,817** (NTU), and **199** (SUTD) modules.
 
 
 #### 3.2.3 Skill Standardisation
