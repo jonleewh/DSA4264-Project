@@ -1,7 +1,7 @@
 # DATASETS / DATA FILES
 
+
 # Data folders
-data/
 datasets/
 dataset/
 raw_data/
@@ -10,8 +10,10 @@ outputs/
 results/
 tmp/
 
+
 # Common data file formats
 *.json
+*.jsonl
 *.csv
 *.tsv
 *.parquet
@@ -23,13 +25,14 @@ tmp/
 *.pickle
 *.pkl
 
+
 # LARGE FILES / ARCHIVES
-*.zip
 *.tar
 *.tar.gz
 *.gz
 *.rar
 *.7z
+
 
 # CREDENTIALS / SECRETS
 .env
@@ -42,6 +45,7 @@ tmp/
 config/secrets.*
 credentials.json
 
+
 # PYTHON
 __pycache__/
 *.pyc
@@ -49,16 +53,24 @@ __pycache__/
 *.pyd
 .ipynb_checkpoints/
 
+
 # VIRTUAL ENVIRONMENTS
 venv/
 .env/
 env/
 .venv/
 
+
 # IDE FILES
 .vscode/
 .idea/
 
+
 # SYSTEM FILES
+.DS_Store
+Thumbs.db
+
+
+
 .DS_Store
 Thumbs.db
