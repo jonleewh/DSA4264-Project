@@ -147,6 +147,14 @@ Full-dataset run:
 bash src/stem_test/run_stem_full_pipeline.sh full
 ```
 
+## LLM Chatbot
+
+Launch LLM Chatbot: 
+
+```bash
+python src/llm_bot/app.py 
+```
+
 ## Folder Guides
 
 - `src/create_test/README.md`
