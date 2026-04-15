@@ -241,7 +241,7 @@ After cleaning, the final university dataset contains:
 
 ### 3.1 Downstream Baseline Pipeline
 
-The official general workflow lives in `src/create_test/` and starts from the notebook-cleaned PKLs `data/cleaned_data/combined_courses_cleaned.pkl` and `data/cleaned_data/jobs_cleaned.pkl`. These PKLs are the source of truth for downstream analysis. The baseline pipeline is the main system used to answer the project question because it converts those cleaned datasets into comparable skill profiles, maps them into a shared canonical vocabulary, and evaluates module-job alignment in a reproducible way. The full workflow can be run via `bash src/create_test/run_baseline_pipeline.sh`.
+The main workflow lives in `src/create_test/` and starts from `data/cleaned_data/combined_courses_cleaned.pkl` and `data/cleaned_data/jobs_cleaned.pkl`, which are the source of truth for downstream analysis. It converts cleaned modules and jobs into comparable skill profiles, maps them into a shared canonical vocabulary, and computes module-job alignment. The full workflow runs via `bash src/create_test/run_baseline_pipeline.sh`.
 
 ```mermaid
 flowchart LR
@@ -271,47 +271,75 @@ flowchart LR
 
 #### 3.1.1 Pipeline Inputs and Export Layer
 
-`create_test_datasets.py` converts the PKLs into downstream JSON/JSONL artifacts. It standardizes row identity, using `university::code` for modules and `uuid` for jobs, applies a final normalized description-length filter, and exports the fields needed by later stages. On the module side, the export preserves the notebook-derived `skills`, `hard_skills`, and `soft_skills` fields. On the job side, it preserves SSOC, work-type, salary, and cleaned skill fields. In full-dataset mode, it produced **10,507 module rows** and **7,104 job rows**.
+`create_test_datasets.py` exports downstream JSON/JSONL files from the PKLs. It uses `university::code` as module identity and `uuid` as job identity, applies a final description-length filter, and preserves module skills, department metadata, SSOC fields, salary, cleaned job skills, and the binary field `is_good_job`. In full mode it produced **10,507 module rows** and **7,104 job rows**.
 
 #### 3.1.2 Canonical Skill Framework Construction
 
-`build_canonical_skill_framework.py` constructs the shared vocabulary used by both module-side and job-side mapping. The output, `data/reference/canonical_skill_framework_v4.json`, stores canonical skill labels, skill types, aliases, notes, and excluded phrases. The current framework contains **89 canonical skills** and **24 excluded phrases**. This framework is needed because direct phrase overlap is too brittle: semantically similar skills often appear in different surface forms across module descriptions and job postings.
+`build_canonical_skill_framework.py` builds the shared vocabulary used on both sides. `data/reference/canonical_skill_framework_v4.json` stores canonical labels, skill types, aliases, notes, and excluded phrases. The current framework contains **89 canonical skills** and **24 excluded phrases**. This step is necessary because direct phrase overlap is too brittle for module and job text.
 
 #### 3.1.3 Role of `module_skill_rules.py`
 
-`module_skill_rules.py` defines the module-side skill vocabulary used across the project. It was built by reviewing recurring phrases in module descriptions, grouping lexical variants under one canonical skill label, and filtering phrases that were too broad, too academic, or too pedagogical to function as useful occupational skills. The aim was to preserve practical competencies such as `machine learning`, `sql`, or `corporate governance` while filtering generic terms such as `course`, `module`, `analysis`, or `design`. The file contains phrase-to-skill rules (`MODULE_SKILL_RULES`), allowed canonical labels (`CANONICAL_MODULE_SKILLS`), evidence constraints (`STRICT_CANONICAL_EVIDENCE`), and blocklists. In the baseline pipeline, these rules help build the canonical framework. In the experimental and STEM pipelines, the same rule base is reused during module-skill extraction.
+`module_skill_rules.py` defines the module-side skill vocabulary. It was built by reviewing recurring module-description phrases, merging lexical variants under canonical skills, and filtering phrases that were too broad, academic, or pedagogical to function as occupational skills. The file contains phrase-to-skill rules, allowed canonical labels, evidence constraints, and blocklists. The baseline pipeline uses these rules to build the framework; the experimental and STEM pipelines reuse them during module-skill extraction.
 
 #### 3.1.4 Job-Side SSOC Enrichment
 
-`extract_job_ssoc3_from_original.py` converts the cleaned job dataset into grouped labour-demand inputs indexed by SSOC hierarchy. It parses each raw SSOC field into 5-digit, 4-digit, and 3-digit codes, looks up the corresponding titles from `ssoc2020.xlsx`, and writes flattened job rows containing the SSOC hierarchy and a deduplicated job-side skill list. On the full baseline run, all **7,104** job rows were preserved at this stage.
+`extract_job_ssoc3_from_original.py` converts cleaned jobs into SSOC-indexed labour-demand rows. It parses each raw SSOC field into 5-digit, 4-digit, and 3-digit codes, looks up titles from `ssoc2020.xlsx`, and writes flattened rows with SSOC hierarchy and deduplicated job skills. It also propagates `is_good_job` and computes a group-level job-quality statistic for each 3-digit SSOC bucket:
+
+`good_job_pct = (number of jobs with is_good_job = 1 in SSOC group) / (total jobs in SSOC group)`
+
+`good_job_pct` is stored on a `0` to `1` scale. On the full baseline run, all **7,104** job rows were preserved.
 
 #### 3.1.5 Canonical Mapping
 
-`canonical_skill_mapper.py` maps raw skill phrases into the shared framework for both modules and jobs. Each phrase is normalized, checked against the excluded-phrase set, matched exactly against aliases where possible, and otherwise mapped semantically using `sentence-transformers/all-MiniLM-L6-v2`. The semantic fallback uses a cosine-similarity threshold of **0.72**; phrases below the threshold are retained as unmapped rather than forced into an incorrect canonical label. The mapper writes row-level canonical skill lists and phrase-level mapping details, including the raw phrase, normalized phrase, match type, and score. On the full baseline run, **10,507** module rows and **7,104** job rows were canonicalised.
+`canonical_skill_mapper.py` maps raw phrases into the shared framework for both modules and jobs. Each phrase is normalized, checked against excluded phrases, matched exactly against aliases where possible, and otherwise mapped semantically with `sentence-transformers/all-MiniLM-L6-v2`. The semantic fallback uses a cosine-similarity threshold of **0.72**; phrases below the threshold remain unmapped. The mapper writes row-level canonical skill lists and phrase-level mapping details. On the full baseline run, **10,507** module rows and **7,104** job rows were canonicalized.
 
 #### 3.1.6 Alignment Logic
 
-`align_module_job_canonical.py` compares each module against grouped job demand in canonical skill space. Jobs are grouped at the **3-digit SSOC level**, producing **119 job groups** in the current run. For each SSOC group, the script aggregates canonical job skills into a weighted profile. For each module, it then compares the module skill profile against every job-group profile using four signals: top-`k` coverage, weighted Jaccard overlap, cosine similarity, and a gap score that measures missing high-weight job skills. These are combined into one composite score:
+`align_module_job_canonical.py` compares each module against grouped job demand in canonical skill space. Jobs are grouped at the **3-digit SSOC level**, giving **119 job groups**. Each SSOC group is represented by a weighted canonical skill profile. Each module is then scored against every profile using top-`k` coverage, weighted Jaccard overlap, cosine similarity, and a gap score for missing high-weight job skills. These are combined into:
 
 `alignment_score = 0.4 * coverage + 0.25 * weighted_jaccard + 0.2 * cosine_similarity + 0.15 * (1 - gap_score)`
 
-The script keeps the top job-group matches for each module and reports dataset-level summary metrics. On the full baseline run, the results were `module_count = 10,507`, `empty_modules = 136`, `job_group_count = 119`, `top1_overlap_rate = 0.7391`, and `average_top1_score = 0.0647`. This is the primary pipeline used to answer the project question because it preserves the notebook-derived module skill signal and gives the strongest combination of coverage and alignment performance across the full module universe.
+We then add a job-quality layer. Each matched SSOC group carries `good_job_pct`, and each module-to-group match receives:
+
+`quality_weighted_alignment_score = alignment_score * good_job_pct`
+
+To reduce dependence on a single match, we also compute:
+
+`top3_weighted_good_job_pct = sum(alignment_score_i * good_job_pct_i) / sum(alignment_score_i)` for the top three matches.
+
+The denominator converts the weighted sum into a weighted average, so the result stays on the same `0` to `1` scale as `good_job_pct`. The script also aggregates module-level results by department.
+
+On the full baseline rerun, the results were `module_count = 10,507`, `empty_modules = 136`, `job_group_count = 119`, `top1_overlap_rate = 0.7391`, `average_top1_score = 0.0647`, `average_top1_good_job_pct = 0.6466`, `average_top1_quality_weighted_alignment = 0.0385`, and `average_top3_weighted_good_job_pct = 0.3564`. These additions distinguish alignment to job demand in general from alignment to demand concentrated in better-quality entry-level roles.
+
+Dataset-level metrics are defined as follows. `module_count` is the number of evaluated modules. `empty_modules` is the number of modules with an empty canonical skill list. `job_group_count` is the number of SSOC groups with at least one canonical job-skill profile. `top1_positive_modules` counts modules whose top-ranked SSOC match has `alignment_score > 0`, so `top1_positive_rate = top1_positive_modules / module_count`. `top1_overlap_modules` counts modules whose top-ranked SSOC match has `strict_overlap_count > 0`, so `top1_overlap_rate = top1_overlap_modules / module_count`. `average_top1_score` is:
+
+`average_top1_score = sum(top1_alignment_score_m) / N`
+
+where `N` is the number of modules with at least one top match. The job-quality summaries are:
+
+`average_top1_good_job_pct = sum(top1_good_job_pct_m) / N`
+
+`average_top1_quality_weighted_alignment = sum(top1_quality_weighted_alignment_score_m) / N`
+
+`average_top3_weighted_good_job_pct = sum(top3_weighted_good_job_pct_m) / N`
+
+Department-level results average the same module-level quantities within each `(source, department)` bucket. For department `d`:
+
+`department_average_top1_score_d = sum(top1_alignment_score_m for m in d) / M_d^*`
+
+where `M_d^*` is the number of modules in `d` with at least one top match. The same form is used for department-level `average_top1_good_job_pct`, `average_top1_quality_weighted_alignment`, and `average_top3_weighted_good_job_pct`.
 
 ### 3.2 Experimental Comparison
 
-The supported experimental workflow lives in `src/create_test/experimental/` and can be run via `bash src/create_test/run_experimental_pipeline.sh`. It is a controlled comparison of one modelling choice: the module-skill extraction strategy. The baseline pipeline uses the module-side skill fields already stored in the cleaned course PKL. The experimental pipeline keeps the rest of the system fixed and replaces only that module-side extraction step with `experimental/extract_module_skills_independent.py`, isolating the effect of module-side extraction without changing the rest of the modelling stack.
-
-#### 3.2.1 Controlled Comparison Design
-
-The comparison is intentionally narrow. It uses the same module rows, job rows, SSOC enrichment, canonical framework, mapping logic, and alignment function as the baseline pipeline. Only the module-side skill source changes, so downstream differences are driven mainly by the extraction strategy.
+The experimental workflow lives in `src/create_test/experimental/` and runs via `bash src/create_test/run_experimental_pipeline.sh`. It changes one component only: module-side skill extraction. The baseline uses notebook-derived module skills; the experimental path replaces them with `experimental/extract_module_skills_independent.py`. The job-side pipeline, SSOC enrichment, canonical framework, and alignment logic remain fixed.
 
 #### 3.2.2 Independent Module Skill Extraction
 
-The independent extractor reads the same module descriptions as the baseline pipeline but derives skills directly from description text. It generates candidate phrases with an n-gram vectorizer, embeds descriptions and candidate phrases with `all-MiniLM-L6-v2`, ranks candidates by semantic relevance, applies rule-based matches from `module_skill_rules.py`, filters broad academic phrases, and semantically normalizes the surviving phrases into the same canonical module-skill space. We tested this approach because some baseline examples looked too generic. For example, `Search Engine Optimization and Analytics` looked marketing-heavy under the baseline but yielded `search engine optimization`, `Data Analysis`, `Machine Learning`, `Optimization`, and `Algorithm Design` under the independent extractor, while `Biology Laboratory` produced more domain-faithful laboratory skills.
+The independent extractor reads the same module descriptions but derives skills directly from text. It generates candidate phrases with an n-gram vectorizer, embeds descriptions and candidate phrases with `all-MiniLM-L6-v2`, ranks candidates by semantic relevance, applies rule-based matches from `module_skill_rules.py`, filters broad academic phrases, and normalizes the survivors into the same canonical skill space. We tested it because some baseline outputs were too generic. For example, `Search Engine Optimization and Analytics` looked marketing-heavy under the baseline but yielded `search engine optimization`, `Data Analysis`, `Machine Learning`, `Optimization`, and `Algorithm Design` under the independent extractor, while `Biology Laboratory` produced more domain-faithful laboratory skills.
 
 #### 3.2.3 Experimental Results and Failure Mode
 
-Although the independent extractor produced stronger examples in some technical cases, it performed much worse at the dataset level. On the same full dataset of **10,507 modules**, the baseline left **136** empty modules while the experimental pipeline left **2,819**. The baseline achieved a **top-1 overlap rate of 0.7391** and an **average top-1 score of 0.0647**, compared with **0.5775** and **0.0410** for the experimental pipeline. The key technical finding is that this failure occurred upstream of canonical mapping: the empty rows in `module_skills_canonical_independent.jsonl` were already empty in `module_descriptions_test_with_skills_independent.jsonl`.
+Although the independent extractor improved some technical examples, it performed much worse at dataset level. On the same **10,507** modules, the baseline left **136** empty modules while the experimental pipeline left **2,819**. The baseline achieved **0.7391** top-1 overlap and **0.0647** average top-1 score, compared with **0.5775** and **0.0410** for the experimental pipeline. Because the experimental path reuses the same SSOC enrichment, canonical framework, and job-quality-aware alignment logic, this remains a controlled comparison. The key failure occurs upstream of canonical mapping: rows that are empty in `module_skills_canonical_independent.jsonl` are already empty in `module_descriptions_test_with_skills_independent.jsonl`.
 
 Table 1 summarizes the baseline-versus-experimental comparison on the full dataset.
 
@@ -324,7 +352,7 @@ Table 1 summarizes the baseline-versus-experimental comparison on the full datas
 | Average top-1 score | 0.0647 | 0.0410 |
 | Avg canonical skills per non-empty module | 4.537 | 2.419 |
 
-These metrics describe three aspects of performance. `Top-1 overlap rate` measures coverage: the share of modules whose best-matching job group contains at least one overlapping canonical skill. `Average top-1 score` measures the strength of that best match and should be interpreted comparatively rather than absolutely. `Avg canonical skills per non-empty module` measures how much skill information each pipeline retains once empty rows are excluded. Together, the table shows that the baseline pipeline preserves a richer module-side signal, produces overlap for more modules, and yields stronger best-match alignments on average.
+Here, `non-empty modules = module_count - empty_modules`. `Top-1 overlap rate = top1_overlap_modules / module_count`, where `top1_overlap_modules` counts modules whose best-matching job group contains at least one overlapping canonical skill. `Average top-1 score = sum(top1_alignment_score_m) / N`, where `N` is the number of modules with at least one top match. `Avg canonical skills per non-empty module = (sum of canonical skill counts across non-empty modules) / (number of non-empty modules)`. The table shows that the baseline preserves more module-side signal, produces overlap for more modules, and yields stronger best-match alignments.
 
 Table 2 shows representative module-level examples. These examples explain both why the independent extractor was worth testing and why it was not retained as the final model.
 
@@ -336,7 +364,7 @@ Table 2 shows representative module-level examples. These examples explain both 
 
 #### 3.2.4 Final Decision from the Comparison
 
-The final modelling decision was to keep the baseline pipeline as the official general workflow. The comparison showed a clear trade-off: the independent extractor could be more accurate for some technical modules, but it was also much lower-coverage and less robust across the full dataset. In short, it was more specific when it worked, but too brittle to serve as the main reporting model. The same comparison motivated the next step of the project: testing a STEM-only pipeline as a robustness check.
+We therefore kept the baseline pipeline as the main general workflow. The independent extractor could be more accurate on some technical modules, but its coverage loss was too large for full-dataset reporting. It was more specific when it worked, but too brittle for the main analysis. This result motivated the STEM robustness check.
 
 ## 4. STEM Robustness Analysis
 

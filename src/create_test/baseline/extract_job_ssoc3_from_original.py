@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+from collections import Counter
 from pathlib import Path
 
 from openpyxl import load_workbook
@@ -65,6 +66,20 @@ def extract_skill_names(row: dict) -> list[str]:
     return names
 
 
+def parse_binary_flag(value) -> int:
+    if value is None:
+        return 0
+    if isinstance(value, bool):
+        return int(value)
+    if isinstance(value, (int, float)):
+        return int(value != 0)
+
+    text = normalize_text(value).lower()
+    if text in {"1", "true", "yes", "y"}:
+        return 1
+    return 0
+
+
 def load_cleaned_rows(input_path: Path) -> list[dict]:
     suffix = input_path.suffix.lower()
     if suffix == ".jsonl":
@@ -117,6 +132,8 @@ def main():
     skipped_no_ssoc = 0
     skipped_no_match = 0
     skipped_non_fresh = 0
+    ssoc3_total_counts: Counter[str] = Counter()
+    ssoc3_good_counts: Counter[str] = Counter()
 
     total = len(cleaned_rows)
     for i, row in enumerate(cleaned_rows, start=1):
@@ -137,6 +154,10 @@ def main():
             skipped_no_match += 1
             continue
 
+        is_good_job = parse_binary_flag(row.get("is_good_job"))
+        ssoc3_total_counts[ssoc3] += 1
+        ssoc3_good_counts[ssoc3] += is_good_job
+
         mapped_rows.append(
             {
                 "job_post_id": row.get("id") or row.get("uuid"),
@@ -146,12 +167,26 @@ def main():
                 "ssoc_4d_title": title4,
                 "ssoc_3d_code": ssoc3,
                 "ssoc_3d_title": title3,
+                "is_good_job": is_good_job,
                 "skills": extract_skill_names(row),
             }
         )
 
         if i % 5000 == 0 or i == total:
             print(f"Scanned {i}/{total} rows...", flush=True)
+
+    for mapped_row in mapped_rows:
+        ssoc3 = mapped_row["ssoc_3d_code"]
+        total_jobs_in_group = ssoc3_total_counts.get(ssoc3, 0)
+        good_jobs_in_group = ssoc3_good_counts.get(ssoc3, 0)
+        mapped_row["ssoc_3d_total_jobs"] = total_jobs_in_group
+        mapped_row["ssoc_3d_good_jobs"] = good_jobs_in_group
+        good_job_pct = (
+            (good_jobs_in_group / total_jobs_in_group)
+            if total_jobs_in_group
+            else 0.0
+        )
+        mapped_row["ssoc_3d_good_job_pct"] = round(good_job_pct, 4)
 
     args.output_jsonl.parent.mkdir(parents=True, exist_ok=True)
     with args.output_jsonl.open("w", encoding="utf-8") as f:

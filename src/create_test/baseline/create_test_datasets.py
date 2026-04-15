@@ -151,6 +151,7 @@ def build_job_rows(jobs_input: Path, min_description_length: int) -> list[dict]:
                 "skills": skills_clean,
                 "all_relevant_skills": skills_clean,
                 "is_freshgrad": True,
+                "is_good_job": int(record.get("is_good_job", 0) or 0),
             }
         )
 
