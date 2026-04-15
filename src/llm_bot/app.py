@@ -1,3 +1,5 @@
+# ./venv/bin/python src/llm_bot/app.py
+
 from __future__ import annotations
 
 import html
@@ -284,6 +286,8 @@ def render_results(result: dict) -> str:
         <div class="card">
           <h2>Baseline Pipeline Status</h2>
           <p class="meta">{html.escape(recommendation_status['message'])}</p>
+          <p class="meta">Canonical modules loaded: <code>{html.escape(str(recommendation_status.get('module_row_count', 0)))}</code></p>
+          <p class="meta">Canonical jobs loaded: <code>{html.escape(str(recommendation_status.get('job_row_count', 0)))}</code></p>
           <p class="meta">Canonical matched jobs: <code>{html.escape(str(recommendation_status.get('canonical_job_match_count', 0)))}</code></p>
           <p class="meta">Active school filter: <code>{html.escape(str(recommendation_status.get('school_filter') or 'Any'))}</code></p>
           {missing_html}
