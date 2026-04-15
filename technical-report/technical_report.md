@@ -211,7 +211,7 @@ Overall, the business problem is **partially addressed**: the system is strong e
 
 Our analysis has several limitations.
 
-Firstly, **data coverage is constrained**. The job dataset is derived from a short MyCareersFuture snapshot, which may capture temporary demand patterns rather than stable labour-market structure. Job-role filtering is rule-based (e.g. `minimum_years_experience` and keyword exclusions), which can introduce false positives and false negatives. Job skills also depend on employer-entered fields with uneven quality, potentially overrepresenting generic soft skills and undercapturing technical requirements expressed in free text. On the education side, coverage is limited to three universities and catalogue-level module descriptions, without full syllabus or assessment evidence.
+Firstly, **data coverage is constrained**. The job dataset derived from MyCareersFuture captures temporary demand patterns rather than stable labour-market structure. Job-role filtering is rule-based (e.g. `minimum_years_experience` and keyword exclusions), which can introduce false positives and negatives. Job skills also depend on employer-entered fields with uneven quality, potentially overrepresenting generic soft skills and undercapturing technical requirements expressed in free text. On the education side, coverage is limited to three universities and catalogue-level module descriptions, without full syllabus or assessment evidence.
 
 Secondly, **modelling choices introduce uncertainty**. STEM scope classification combines metadata and semantic rules and may misclassify edge cases, especially for interdisciplinary modules. Canonical mapping improves consistency, but it may collapse distinctions that matter in practice or preserve distinctions that are functionally equivalent. Hence, output quality remains sensitive to taxonomy design, extraction thresholds, and mapping logic.
 
@@ -222,15 +222,15 @@ Lastly, **fairness and ethics are important**. Employer language in job ads shou
 
 ### 4.4 Recommendations
 
-Our project has potential to create business value for MOE HEPD and universities. The appropriate next step is **staged deployment** rather than immediate full-scale operationalisation.
+Our project creates business value for MOE and universities. The appropriate next step is **staged deployment** rather than immediate full-scale operationalisation.
 
 The system should first be deployed as an internal decision-support tool through a **controlled pilot** (e.g. STEM-focused or selected faculties). Expansion should proceed only if key conditions are met over repeated refresh cycles: low and stable empty-module rates, reproducible outputs, and analyst validation that sampled matches are substantively plausible and useful for policy workflow.
 
-Next, **high-impact data constraints should be addressed before broader rollout**. Job data should be expanded beyond a one-week single-source snapshot to include **additional job portals** (e.g. LinkedIn, Careers@Gov) and a **longer time horizon**. Graduate-role labelling should move beyond simple experience filters, and job-side extraction should incorporate richer free-text signals. On the curriculum side, incorporating **fuller syllabus and assessment information (where feasible)** is likely to improve alignment quality more than further tuning of scoring weights alone.
+Next, **high-impact data constraints should be addressed before broader rollout**. Job data should be expanded beyond a one-week single-source snapshot to include **additional job portals** (e.g. LinkedIn, Careers@Gov) and a **longer time horizon**. Graduate-role labelling should move beyond simple experience filters, and job-side extraction should incorporate richer free-text signals. On the curriculum side, incorporating **fuller syllabus and assessment information** is likely to improve alignment quality more than further tuning of scoring weights alone.
 
 A **governance track** should run in parallel with technical scale-up. This includes data-sharing agreements, PDPA-compliant data handling, role-based access controls, and version tracking for taxonomies and models. Fairness checks across disciplines should be integrated into regular reporting, and policy interpretation should require human review plus triangulation with external outcomes.
 
-From a cost perspective, deployment is feasible but requires **deliberate investment** in ingestion automation, workflow orchestration, quality checks, reporting interfaces, and ongoing taxonomy maintenance. These costs are justified if the system reduces manual audit burden and improves timeliness of curriculum-risk detection. If pilot criteria are not met after planned iterations, the project should be narrowed to exploratory analytics or closed. If criteria are met, the system should be institutionalised as a recurring monitoring capability that informs, but does not replace, expert policy judgment.
+From a cost perspective, deployment is feasible but requires **deliberate investment** in ingestion automation, workflow orchestration, quality checks, reporting interfaces, and ongoing taxonomy maintenance. These costs are justified if the system reduces manual audit burden and improves timeliness of curriculum-risk detection. If criteria are met, the system should be institutionalised as a recurring monitoring capability that informs, but does not replace, expert policy judgment.
 
 
 ## 5. Appendix: Suggested Figures and Tables
