@@ -1,69 +1,42 @@
-# Technical Report: 
+# Technical Report
 
-## 1. Context and Objective
+## 1. Context
 
-In recent years, concerns have emerged over declining employment outcomes among fresh graduates in Singapore. The 2025 Graduate Employment Survey (GES) reported a decline in full-time permanent employment despite stable median salaries (The Straits Times, 2025), while surveys indicate increasing anxiety among graduates on job prospects (Channel NewsAsia, 2025).
+In recent years, concerns have emerged over declining employment outcomes among fresh graduates in Singapore. The 2025 Graduate Employment Survey (GES) reported a [decline in full-time permanent employment despite stable median salaries](https://www.straitstimes.com/singapore/parenting-education/fewer-fresh-uni-graduates-in-2025-found-full-time-work-but-pay-held-steady-survey), while surveys indicate [increasing anxiety among graduates on job prospects](https://www.channelnewsasia.com/singapore/fresh-graduates-university-job-search-cna-poll-5288556).
 
 These trends raise important questions about the alignment between higher education and labour market demands. Current analyses rely on aggregate outcomes, lacking visibility into specific skills or curriculum components contributing to employability outcomes. While universities continue to equip students with theoretical knowledge and foundational skills, the evolving nature of industry requirements, driven by technological advancements and shifting economic conditions, may result in a mismatch between what is taught and what employers seek.
 
-Hence, this project answers a key question: How well are university courses preparing students for real-world jobs? By analysing job descriptions alongside university course content, we aims to systematically evaluate the extent to which academic curricula align with current industry skill requirements, and to identify potential gaps that may contribute to graduate employment challenges.
+Hence, this project answers a key question: **How well are university courses preparing students for real-world jobs?** By analysing job descriptions alongside university course content, we aims to systematically evaluate the extent to which academic curricula align with current industry skill requirements, and to identify potential gaps that may contribute to graduate employment challenges.
 
-### 1.1 Project Scope
+## 2. Scope
 
-#### 1.1.1 Problem definition
-MOE’s Higher Education Policy Division (HEPD) faces the ongoing challenge of ensuring that university curricula remain aligned with labour market demands. As the body responsible for higher education policy and quality assurance, HEPD must regularly assess whether graduates possess the skills required by employers.
-However, this task is inherently complex due to the nature of the data involved. Job advertisements and course descriptions are large-scale, unstructured, and continuously evolving sources of information. Thousands of job postings are generated regularly, with skills described using varied, inconsistent, and context-dependent language. Similarly, course descriptions differ across institutions in structure, terminology, and level of detail.
-This problem occurs continuously as labour market demands shift rapidly due to technological advancements and industry changes. In the absence of an automated system, HEPD relies on manual reviews or periodic audits conducted over multi-year cycles. These approaches are resource-intensive and unable to keep pace with real-time changes, increasing the risk that curriculum evaluations are based on outdated or incomplete information.
+### 2.1 Problem
 
-#### 1.1.2 Impact and Significance
-The lack of a scalable and systematic approach to assessing curriculum–labour market alignment has several key consequences:
-Graduate employability challenges: The 2025 Graduate Employment Survey (GES) reports a decline in full-time employment among fresh graduates, suggesting potential mismatches between acquired skills and employer expectations (The Straits Times, 2025).
-Increased job search anxiety: Graduates report heightened uncertainty and stress in securing employment, reflecting concerns about their preparedness for the job market (Channel NewsAsia, 2025).
-Inefficient curriculum planning: Universities may continue offering courses that are not closely aligned with industry needs, leading to suboptimal allocation of educational resources.
-Delayed policy response: Without timely insights, MOE may take years to identify emerging skill gaps, limiting its ability to respond proactively.
-Scalability limitations: Manually analysing thousands of job postings and course descriptions is impractical, making continuous monitoring infeasible.
-Collectively, these issues weaken the ability of the higher education system to produce graduates who are well-prepared for an evolving workforce.
+**MOE’s Higher Education Policy Division (HEPD)** must ensure university curricula stay aligned with labour market needs. This problem is ongoing and high-frequency: job requirements evolve continuously, while universities update courses on slower academic cycles. HEPD therefore needs a repeatable way to compare what students are taught against what employers currently demand.
 
-#### 1.1.3 Why Data Science / Machine Learning is Appropriate
-Data science and machine learning provide a suitable solution due to their ability to process large-scale, unstructured, and dynamic data.
-First, Natural Language Processing (NLP) techniques enable the extraction and standardisation of skill-related information from both job advertisements and course descriptions, allowing meaningful comparison despite differences in wording.
-Second, embedding-based models can represent both datasets within a shared semantic space, where similarity measures (e.g., cosine similarity) quantify the alignment between courses and job requirements. This transforms qualitative text into measurable indicators.
-Finally, automated data pipelines enable continuous and scalable analysis, allowing MOE to monitor labour market trends in near real-time rather than relying on infrequent manual reviews. This improves both the speed and reliability of insights, supporting more responsive and data-driven policy decisions.
-Overall, data science and machine learning directly address the challenges of scale, variability, and timeliness, making them well-suited for evaluating curriculum relevance in a rapidly changing labour market.
+Today, this assessment is difficult because job advertisements and course descriptions are **unstructured** and **large-scale**. They are written in inconsistent language, vary by context, and change over time. The volume is also substantial, with thousands of postings and many course descriptions to review. In practice, manual reviews and periodic audits are resource-intensive and typically run on multi-year cycles, which limits HEPD’s ability to respond quickly.
+
+The impact is tangible. If alignment is weak, graduates face poorer employment outcomes. Recent graduate employment results have shown declines in full-time employment. Students also experience greater uncertainty during job search. For **institutions**, delayed insight can lead to continued investment in low-relevance course content. For **policymakers**, lagged detection of emerging skill gaps delays interventions and reduces policy effectiveness. Without a scalable approach, HEPD risks making decisions on outdated evidence.
+
+Data science and machine learning are appropriate as they directly address scale, variability, and timeliness. **Natural language processing** can extract and standardize skill signals from messy text; **embedding models** can place job and course content in a shared semantic space and quantify alignment using similarity scores; and **automated pipelines** can run continuously, turning a manual, periodic process into near real-time monitoring. This enables faster, more consistent, and evidence-based curriculum policy decisions.
+
+### 2.2 Success Criteria
+
+The project is successful if it helps HEPD and universities **assess alignment of curriculum content with employer demand**, and use this to **improve curriculum planning**. It should also produce practical employability insights by **linking courses to relevant job opportunities and associated market signals** (such as salary patterns), so students, educators, and policymakers can make better decisions.
+
+Operationally, success means the system can process large unstructured datasets reliably and efficiently through automated workflows (cleaning, skill extraction, embedding, and matching), **reducing analysis time from manual cycles to repeatable runs**. It should also produce stable, interpretable alignment scores that reflect meaningful skill overlap while minimizing noise from irrelevant text.
 
 
+### 2.3 Assumptions
 
-### 1.2 Success Criteria
-
-#### Business Goals
-If our project is successful, it can improve alignment between university curricula and labour market demand. The project enables stakeholders (e.g., MOE, universities) to identify gaps between skills taught in courses and skills required in job advertisements. Success is achieved if the system can consistently highlight high- and low-alignment courses, supporting data-driven curriculum improvements.
-
-Another success outcome is enhancing graduate employability insights. By linking courses to relevant job opportunities and associated salary signals, the system provides actionable insights into which courses are most aligned with industry needs. Success is reflected in the ability to generate meaningful rankings or recommendations that inform students, educators, and policymakers.
-
-#### Operational Goals 
-Scalable and efficient processing of large unstructured datasets is another success outcome. The system should be able to process thousands of job postings and course descriptions efficiently using automated pipelines (e.g., text cleaning, skill extraction, embeddings). Success is achieved if the pipeline runs reliably within a reasonable time (e.g., minutes instead of manual analysis).
-
-Accurate and consistent skill extraction and matching should also be achieved. The system should produce reliable representations of skills from both job and course data. Success is indicated by consistent alignment scores that reflect meaningful overlaps between courses and jobs, avoiding noise from irrelevant or low-quality skill data.
-
-### 1.3 Assumptions
-
-This project is based on several key assumptions that influence its feasibility and the validity of its outputs.
-
-First, it is assumed that job advertisements provide a reliable proxy for labour market demand. While job postings reflect employer requirements, they may not always fully capture actual job responsibilities or may include inflated or generic skill requirements. 
-Second, the analysis assumes that university course descriptions accurately represent the skills and knowledge acquired by students. In practice, actual learning outcomes may vary depending on teaching methods, assessments, and informal learning experiences.
-
-Third, the project assumes that NLP techniques can effectively extract meaningful skill signals from unstructured text. However, some skills may be implicit, context-dependent, or described inconsistently, which could affect extraction accuracy.
-
-Fourth, it is assumed that semantic similarity between course content and job descriptions is a valid indicator of real-world alignment. While embedding models capture textual similarity, they may not fully reflect the depth or practical applicability of skills.
-
-Finally, it is assumed that sufficient and representative data is available, and that stakeholders (e.g., MOE and universities) are able to act on the insights generated. Without adequate data quality or institutional adoption, the system’s impact would be limited.
+Our project assumes that job advertisements are a reasonable proxy for labour market demand, and that course descriptions reasonably represent the skills students acquire. It also assumes NLP methods can recover useful skill signals despite inconsistent wording, and that semantic similarity between course and job text is a useful indicator of alignment (even if it does not fully capture skill depth or practical proficiency). Finally, it assumes data quality and coverage are sufficient, and that MOE and university stakeholders are willing and able to act on the insights generated.
 
 
-## 2. Data and Cleaning
+## 3. Methodology
 
-### 2.1 Jobs Data Cleaning
+### 3.1 Jobs Data Cleaning
 
-#### 2.1.1 Notebook Workflow
+#### 3.1.1 Notebook Workflow
 
 Methodologically, the notebook follows a standard data engineering pattern:
 
@@ -77,7 +50,7 @@ Methodologically, the notebook follows a standard data engineering pattern:
 
 This sequence separates structural cleaning from analytical interpretation while keeping both in the same artifact for transparency.
 
-#### 2.1.2 Project-Wide Pipeline Overview
+#### 3.1.2 Project-Wide Pipeline Overview
 
 - Add a short end-to-end overview of the full project workflow:
   - raw job and module data acquisition
@@ -90,7 +63,7 @@ This sequence separates structural cleaning from analytical interpretation while
 - State that the notebook-cleaned PKL files are now the source of truth for downstream workflows.
 - Mention the standardized shell-script entrypoints for the supported pipelines.
 
-#### 2.1.3 Data Collection and Ingestion
+#### 3.1.3 Data Collection and Ingestion
 
 The loader searches `../../data` recursively for files whose names begin with `MCF-`, falling back to a `job` subdirectory only if needed. This is a robust engineering decision because it prioritises the intended project data while remaining resilient to folder reorganisation. During execution, the notebook discovered **22,718 raw JSON files** and loaded **22,718 job rows**.
 
@@ -110,7 +83,7 @@ Each record is flattened into a structured row with fields such as:
 
 The notebook also strips HTML from descriptions using `BeautifulSoup`, which is important because job descriptions are often stored as HTML fragments rather than plain text. This reduces noise before text-based filtering and makes length checks more meaningful.
 
-#### 2.1.4 Targeted Cleaning for Graduate-Relevant Roles
+#### 3.1.4 Targeted Cleaning for Graduate-Relevant Roles
 
 The first major cleaning stage aligns the dataset to the project objective: identifying labour demand relevant to undergraduates and recent graduates.
 
@@ -137,7 +110,7 @@ The observed row counts show the effect of each stage:
 
 These filters demonstrate robustness in two ways. First, they address known data quality issues such as sparsity and duplication. Second, they encode domain logic rather than relying on generic preprocessing. In a public-sector context, that matters because the distinction between internship, graduate, and postgraduate pipelines is policy-relevant: interventions for undergraduate curriculum design should not be distorted by jobs intended for researchers or late-stage professionals.
 
-#### 2.1.5 Employment Type, Salary, and Imputation Logic
+#### 3.1.5 Employment Type, Salary, and Imputation Logic
 
 The notebook derives `contract_type` and `work_type` from employer-provided `employment_types`, mapping values into interpretable categories such as `Permanent`, `Contract`, `Temporary`, `Freelance`, `Full Time`, and `Part Time`.
 
@@ -159,7 +132,7 @@ After cleaning, the final job dataset contains:
 
 The large `Unknown` contract-type share is itself an important analytical finding: it reflects incomplete source metadata and should be acknowledged in any downstream interpretation.
 
-#### 2.1.6 Skill Normalisation and Frequency Filtering
+#### 3.1.6 Skill Normalisation and Frequency Filtering
 
 The skill cleaning process has several stages:
 
@@ -185,16 +158,16 @@ The final distribution of skill counts is plausible for job postings:
 
 The notebook also exports raw and cleaned skill-frequency tables to Excel, which is valuable for stakeholder review. Non-technical reviewers can inspect the vocabulary and challenge cleaning rules if necessary, making the process more governable.
 
-#### 2.1.7 Evaluating Goodness of Job 
+#### 3.1.7 Evaluating Goodness of Job 
 **to be added back after section is restored in notebook!!!**
 
-#### 2.1.8 Output Structure and Reusability
+#### 3.1.8 Output Structure and Reusability
 
 The cleaned dataset is saved as `data/cleaned_data/jobs_cleaned.pkl`. Before saving, the notebook drops intermediate helper columns and reorders the final schema so downstream consumers receive a compact, consistent table.
 
 This is good execution practice. Instead of passing along every temporary artifact created during cleaning, the notebook separates internal processing columns from production-facing outputs. That makes later analysis cleaner and reduces accidental dependency on unstable intermediate fields.
 
-#### 2.1.9 Descriptive Validation and Exploratory Analysis
+#### 3.1.9 Descriptive Validation and Exploratory Analysis
 
 The second half of the notebook performs descriptive analysis on the cleaned data. This is not merely exploratory; it acts as a validation layer. If the top titles, skill distributions, and data-role patterns were obviously implausible, that would signal a problem in the cleaning pipeline.
 
@@ -208,27 +181,27 @@ The notebook also isolates a subset of data-related roles using keyword matching
 
 These summaries directly support the broader project objective. They show what employers actually ask for and create a bridge to course-side skill extraction. For a university or public-sector workforce unit, this is the dataset that can later be matched against curriculum content to identify alignment gaps.
 
-### 2.2 University Data Cleaning
+### 3.2 University Data Cleaning
 
-#### 2.2.1 University Course Cleaning Methodology
+#### 3.2.1 University Course Cleaning Methodology
 The notebook follows a structured data engineering workflow to transform raw, semi-structured course data into an analysis-ready dataset. It begins by ingesting module data from multiple universities and standardising heterogeneous schemas into a unified tabular format. Textual fields such as titles, descriptions, and departments are cleaned and normalised, after which the dataset is filtered to retain undergraduate-relevant modules. Noisy or low-quality records are removed, and the cleaned text is prepared for downstream NLP tasks such as skill extraction. The final dataset is persisted as a structured output, with validation checks performed to ensure plausibility. This workflow separates data preparation from analysis while maintaining transparency within a single notebook.
 
-#### 2.2.2 Project-Wide Pipeline Overview
+#### 3.2.2 Project-Wide Pipeline Overview
 At a system level, this notebook forms part of a broader end-to-end pipeline. The process spans raw module data acquisition (from NUS, NTU, and SUTD), preprocessing and scraping, notebook-based cleaning, and construction of a unified dataset. This dataset feeds into skill extraction and canonical skill mapping, which are then aligned with job-side skill demand for downstream analytics such as curriculum–labour market comparison. The cleaned dataset serves as the source of truth for all subsequent workflows, ensuring consistency across the project.
 
-#### 2.2.3 Data Collection and Ingestion
+#### 3.2.3 Data Collection and Ingestion
 Module data is loaded from multiple sources and consolidated into a unified structure despite differences in schemas and formatting. NUS data is obtained via API, while NTU and SUTD data are sourced from scraper outputs, with NTU department codes mapped to full names using an external lookup table. Key fields—module code, title, description, and department—are extracted and standardised, and a university column is added to preserve provenance.
 
-#### 2.2.4 Text Cleaning and Normalisation
+#### 3.2.4 Text Cleaning and Normalisation
 Given the inconsistency of module descriptions, extensive text cleaning is applied. This includes lowercasing, spelling standardisation, HTML removal using BeautifulSoup, elimination of invalid Unicode characters, and whitespace normalisation. These steps ensure that textual data reflects meaningful content rather than formatting artefacts, which is critical for downstream NLP tasks.
 
-#### 2.2.5 Targeted Filtering for Undergraduate Modules
+#### 3.2.5 Targeted Filtering for Undergraduate Modules
 To align with project objectives, the dataset is filtered to retain only undergraduate-relevant modules. Modules with very short descriptions are removed, along with those from irrelevant faculties and postgraduate programmes identified through title and description cues. Rows with missing essential fields are also excluded. This ensures that the dataset reflects curriculum content relevant to entry-level job demand.
 
-#### 2.2.6 Preparation for Skill Extraction
+#### 3.2.6 Preparation for Skill Extraction
 The cleaned dataset is further processed for NLP-based skill extraction. Descriptions are tokenised into manageable units, word counts are computed robustly, and text is normalised to reduce variation. This preprocessing ensures compatibility with embedding-based models such as MiniLM, preserving semantic signals while minimising noise.
 
-#### 2.2.7 Schema Standardisation Across Universities
+#### 3.2.7 Schema Standardisation Across Universities
 Finally, the notebook harmonises data across universities by standardising column names, department representations, and text formats. The dataset adopts a consistent schema (code, title, department, description, university, and skill-related fields) and is saved as a .pkl file. Intermediate artifacts are removed, producing a compact, stable dataset suitable for downstream analysis.
 
 After cleaning, the final university dataset contains:
@@ -237,9 +210,9 @@ After cleaning, the final university dataset contains:
 - **'NTU': 1817 rows of modules**
 - **'SUTD': 199 rows of module**
 
-## 3. General Pipeline
+## 4. General Pipeline
 
-### 3.1 Downstream Baseline Pipeline
+### 4.1 Downstream Baseline Pipeline
 
 The main workflow lives in `src/create_test/` and starts from `data/cleaned_data/combined_courses_cleaned.pkl` and `data/cleaned_data/jobs_cleaned.pkl`, which are the source of truth for downstream analysis. It converts cleaned modules and jobs into comparable skill profiles, maps them into a shared canonical vocabulary, and computes module-job alignment. The full workflow runs via `bash src/create_test/run_baseline_pipeline.sh`.
 
@@ -269,19 +242,19 @@ flowchart LR
     class A,B,D,E,H,J,L,M,O data;
 ```
 
-#### 3.1.1 Pipeline Inputs and Export Layer
+#### 4.1.1 Pipeline Inputs and Export Layer
 
 `create_test_datasets.py` exports downstream JSON/JSONL files from the PKLs. It uses `university::code` as module identity and `uuid` as job identity, applies a final description-length filter, and preserves module skills, department metadata, SSOC fields, salary, cleaned job skills, and the binary field `is_good_job`. In full mode it produced **10,507 module rows** and **7,104 job rows**.
 
-#### 3.1.2 Canonical Skill Framework Construction
+#### 4.1.2 Canonical Skill Framework Construction
 
 `build_canonical_skill_framework.py` builds the shared vocabulary used on both sides. `data/reference/canonical_skill_framework_v4.json` stores canonical labels, skill types, aliases, notes, and excluded phrases. The current framework contains **89 canonical skills** and **24 excluded phrases**. This step is necessary because direct phrase overlap is too brittle for module and job text.
 
-#### 3.1.3 Role of `module_skill_rules.py`
+#### 4.1.3 Role of `module_skill_rules.py`
 
 `module_skill_rules.py` defines the module-side skill vocabulary. It was built by reviewing recurring module-description phrases, merging lexical variants under canonical skills, and filtering phrases that were too broad, academic, or pedagogical to function as occupational skills. The file contains phrase-to-skill rules, allowed canonical labels, evidence constraints, and blocklists. The baseline pipeline uses these rules to build the framework; the experimental and STEM pipelines reuse them during module-skill extraction.
 
-#### 3.1.4 Job-Side SSOC Enrichment
+#### 4.1.4 Job-Side SSOC Enrichment
 
 `extract_job_ssoc3_from_original.py` converts cleaned jobs into SSOC-indexed labour-demand rows. It parses each raw SSOC field into 5-digit, 4-digit, and 3-digit codes, looks up titles from `ssoc2020.xlsx`, and writes flattened rows with SSOC hierarchy and deduplicated job skills. It also propagates `is_good_job` and computes a group-level job-quality statistic for each 3-digit SSOC bucket:
 
@@ -289,11 +262,11 @@ flowchart LR
 
 `good_job_pct` is stored on a `0` to `1` scale. On the full baseline run, all **7,104** job rows were preserved.
 
-#### 3.1.5 Canonical Mapping
+#### 4.1.5 Canonical Mapping
 
 `canonical_skill_mapper.py` maps raw phrases into the shared framework for both modules and jobs. Each phrase is normalized, checked against excluded phrases, matched exactly against aliases where possible, and otherwise mapped semantically with `sentence-transformers/all-MiniLM-L6-v2`. The semantic fallback uses a cosine-similarity threshold of **0.72**; phrases below the threshold remain unmapped. The mapper writes row-level canonical skill lists and phrase-level mapping details. On the full baseline run, **10,507** module rows and **7,104** job rows were canonicalized.
 
-#### 3.1.6 Alignment Logic
+#### 4.1.6 Alignment Logic
 
 `align_module_job_canonical.py` compares each module against grouped job demand in canonical skill space. Jobs are grouped at the **3-digit SSOC level**, giving **119 job groups**. Each SSOC group is represented by a weighted canonical skill profile. Each module is then scored against every profile using top-`k` coverage, weighted Jaccard overlap, cosine similarity, and a gap score for missing high-weight job skills. These are combined into:
 
@@ -331,15 +304,15 @@ Department-level results average the same module-level quantities within each `(
 
 where `M_d^*` is the number of modules in `d` with at least one top match. The same form is used for department-level `average_top1_good_job_pct`, `average_top1_quality_weighted_alignment`, and `average_top3_weighted_good_job_pct`.
 
-### 3.2 Experimental Comparison
+### 4.2 Experimental Comparison
 
 The experimental workflow lives in `src/create_test/experimental/` and runs via `bash src/create_test/run_experimental_pipeline.sh`. It changes one component only: module-side skill extraction. The baseline uses notebook-derived module skills; the experimental path replaces them with `experimental/extract_module_skills_independent.py`. The job-side pipeline, SSOC enrichment, canonical framework, and alignment logic remain fixed.
 
-#### 3.2.2 Independent Module Skill Extraction
+#### 4.2.2 Independent Module Skill Extraction
 
 The independent extractor reads the same module descriptions but derives skills directly from text. It generates candidate phrases with an n-gram vectorizer, embeds descriptions and candidate phrases with `all-MiniLM-L6-v2`, ranks candidates by semantic relevance, applies rule-based matches from `module_skill_rules.py`, filters broad academic phrases, and normalizes the survivors into the same canonical skill space. We tested it because some baseline outputs were too generic. For example, `Search Engine Optimization and Analytics` looked marketing-heavy under the baseline but yielded `search engine optimization`, `Data Analysis`, `Machine Learning`, `Optimization`, and `Algorithm Design` under the independent extractor, while `Biology Laboratory` produced more domain-faithful laboratory skills.
 
-#### 3.2.3 Experimental Results and Failure Mode
+#### 4.2.3 Experimental Results and Failure Mode
 
 Although the independent extractor improved some technical examples, it performed much worse at dataset level. On the same **10,507** modules, the baseline left **136** empty modules while the experimental pipeline left **2,819**. The baseline achieved **0.7391** top-1 overlap and **0.0647** average top-1 score, compared with **0.5775** and **0.0410** for the experimental pipeline. Because the experimental path reuses the same SSOC enrichment, canonical framework, and job-quality-aware alignment logic, this remains a controlled comparison. The key failure occurs upstream of canonical mapping: rows that are empty in `module_skills_canonical_independent.jsonl` are already empty in `module_descriptions_test_with_skills_independent.jsonl`.
 
@@ -364,15 +337,15 @@ Table 2 shows representative module-level examples. These examples explain both 
 | `Biology Laboratory` | `ecological design`, `genetic engineering`, `research skills` | `Laboratory Skills`, `Research`, `life science research`, `research lab` | experimental is more domain-faithful |
 | `From DNA to Gene Therapy` | `Project Management`, `fieldwork`, `genetic engineering`, `research skills` | empty | experimental is too brittle at scale |
 
-#### 3.2.4 Final Decision from the Comparison
+#### 4.2.4 Final Decision from the Comparison
 
 We therefore kept the baseline pipeline as the main general workflow. The independent extractor could be more accurate on some technical modules, but its coverage loss was too large for full-dataset reporting. It was more specific when it worked, but too brittle for the main analysis. This result motivated the STEM robustness check.
 
-## 4. STEM Robustness Analysis
+## 5. STEM Robustness Analysis
 
 We introduced a STEM-focused test to reduce cross-domain noise in module-job matching. In the full module universe, many modules are intentionally non-technical or mixed-context, which can dilute technical-skill signals and make alignment scores harder to interpret for workforce-oriented technical roles. By scoping to STEM, we test whether alignment patterns remain consistent under a more technically coherent module set, and to check for robustness and sensitivity.
 
-### 4.1 STEM Classification and Pipeline
+### 5.1 STEM Classification and Pipeline
 
 We classify modules into STEM and non-STEM using a hybrid method that combines university-specific metadata classification with semantic text understanding at the paragraph, sentence and keyword levels. Firstly, we mapped modules offered by each university’s STEM-focused departments/faculties as STEM.
 
@@ -424,13 +397,11 @@ flowchart LR
 
 ```
 
-### 4.2 Results
+### 5.2 Results
 
 On the STEM subset (**4,431 modules**), the STEM pipeline yields **very high coverage** and **stronger top-1 alignment metrics**. This should be interpreted as an **in-domain robustness result** rather than a direct improvement claim over full-module pipelines.
 
-**Table 3** summarizes the results for the STEM dataset.
-
-**Table 3. Cross-scope comparison.**
+**Table 3** summarises the results for the STEM dataset, relative to the experimental pipeline.
 
 | Metric | Experimental | STEM Pipeline |
 |---|---:|---:|
@@ -445,8 +416,9 @@ Note: Experimental metrics are described in Section 3.2.3;. Differences reflect 
 
 The observed improvements likely come from **improved fit of STEM-specific extraction/mapping rules** and a **semantically more homogeneous module set**. STEM modules are generally more skill-dense and use technical terminology that maps more directly to canonical skills and job taxonomies. Therefore, STEM-specific constraints demonstrates robustness.
 
+## 6. Results
 
-## 5. Discussion
+### 6.1 Discussion
 
 Our pipelines provide a usable signal of **module-level labour-market relevance**. This signal is most useful in relative terms: comparing modules, departments, and pipelines by coverage, empty-module rates, and match plausibility. It is less meaningful to interpret any one alignment score in isolation.
 
@@ -458,10 +430,7 @@ For MOE HEPD and universities, the pipeline is best used as decision support. It
 
 On robustness, the analysis is stronger than a notebook-only pipeline because it uses explicit, reproducible script stages and stable artifacts. The baseline workflow is treated as the supported general pipeline, while the independent extractor remains experimental due to weaker dataset-level coverage. This separation improves reliability and reduces confusion in downstream interpretation. However, robustness is conditional: outputs remain sensitive to extraction and canonical mapping choices, and STEM results should be read as in-domain robustness in a more semantically homogeneous setting, not universal superiority across all curricula.
 
-
-## 6. Limitations and Future Work
-
-### 6.1 Limitations, Biases, Ethical Considerations
+### 6.2 Limitations, Biases, Ethical Considerations
 
 Our analysis has several limitations.
 
@@ -474,7 +443,7 @@ Thirdly, on **interpretation**, module-job alignment is similarity-based and sho
 Lastly, employer language in job ads should not be treated as objective labour-market truth. A skill-overlap framing may systematically undervalue humanities or interdisciplinary programmes. If policymakers over-weight current job ads, curricula may become overly reactive to short-term market fluctuations and underinvest in foundational, transferable, and disciplinary knowledge. Human review is therefore necessary before using outputs for high-stakes decisions.
 
 
-### 6.2 Recommendations
+### 6.3 Recommendations
 
 Our project has the potential to create business value for MOE HEPD and universities.
 
