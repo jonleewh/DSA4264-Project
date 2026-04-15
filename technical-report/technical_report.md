@@ -60,20 +60,20 @@ flowchart LR
     A["Ingest **22,718** raw records"] --> B["Standardise schema"]
     B --> C["Apply policy-relevant filters"]
     C --> D["Engineer labour features"]
-    D --> E["Clean skills"]
-    E --> F["Persist analysis-ready outputs"]
-    F --> G["Run descriptive validation checks"]
+    D --> E["Rating goodness of job"]
+    E --> F["Clean skills"]
+    F --> G["Persist analysis-ready outputs"]
+    G --> H["Run descriptive validation checks"]
 ```
 
 `data_cleaning_jobs_merged.ipynb` converts 22,718 raw postings into an analysis-ready job dataset focused on **entry-level demand**. Records are first flattened into a standard schema (job metadata, text fields, salary, and SSOC codes), and HTML is removed from descriptions to reduce formatting noise.
 
-Filtering then enforces project relevance: only fresh-graduate postings with 0-1 years experience are kept; records with missing or very short descriptions (<10 words) are dropped; and likely postgraduate/research roles are excluded using keyword rules. Employment metadata is normalised by mapping employer-provided tags into interpretable contract/work categories. Missing work type is inferred within 3-digit SSOC groups when possible, and salary fields are converted to numeric values to compute average salary.
+Filtering then enforces project relevance: only fresh-graduate postings with 0-1 years experience are kept; records with missing or very short descriptions (<10 words) are dropped; and likely postgraduate/research roles are excluded using keyword rules. Employment metadata is normalised by mapping employer-provided tags into interpretable contract/work categories. Missing work type is inferred within 3-digit SSOC groups when possible, and salary fields are converted to numeric values to compute average salary. Goodness of job is then computed, based on factors including average salary, work flexibility, job stability and ease of getting the job. 
 
 Skills are cleaned in a separate stage to balance coverage and precision: strings are normalised (case/punctuation/spacing), low-value generic labels are removed, synonymous soft-skill variants are collapsed, selected multi-word technical phrases are preserved, and near-duplicate skills within each posting are removed with fuzzy matching. To reduce sparsity, only skills appearing at least three times are retained, and postings with fewer than three cleaned skills are removed.
 
 The final output (`jobs_cleaned.pkl`) contains **7,104 postings** (**6,448 full-time; 656 part-time**) with an average of **12.76 cleaned skills per posting**, followed by descriptive checks to validate plausibility before downstream modelling.
 
-**(include criteria to evaluate Goodness of Job!!!!)**
 
 #### 3.2.2 University Data Cleaning
 
@@ -81,7 +81,7 @@ The final output (`jobs_cleaned.pkl`) contains **7,104 postings** (**6,448 full-
 
 Text cleaning removes noise and improves comparability across institutions: descriptions are lowercased, spelling/formatting inconsistencies are normalised, HTML and invalid Unicode artefacts are stripped, and whitespace is standardised. The dataset is then filtered to undergraduate-relevant content by removing records with missing critical fields, very short descriptions, and modules flagged as postgraduate or out-of-scope faculties.
 
-For NLP readiness, cleaned descriptions are tokenised and normalised for robust word-count and embedding-based processing. The notebook then saves a unified, consistent dataset (including provenance fields) as the source of truth for downstream skill mapping and curriculum-job matching. Final retained counts are **8,499** (NUS), **1,817** (NTU), and **199** (SUTD) modules.
+For NLP readiness, cleaned descriptions are tokenised and normalised for robust word-count and embedding-based processing. The notebook then saves a unified, consistent dataset (including provenance fields) as the source of truth for downstream skill mapping and curriculum-job matching. The final output (`combined_courses_cleaned.pkl`) retained counts are **8,499** (NUS), **1,817** (NTU), and **199** (SUTD) modules.
 
 
 #### 3.2.3 Skill Standardisation
