@@ -284,14 +284,20 @@ Although the independent extractor improved some technical examples, it performe
 
 Table 1 summarizes the baseline-versus-experimental comparison on the full dataset.
 
-| Metric | Baseline | Experimental |
-|---|---:|---:|
-| Modules evaluated | 10,507 | 10,507 |
-| Empty modules | 136 | 2,819 |
-| Non-empty modules | 10,371 | 7,688 |
-| Top-1 overlap rate | 0.7391 | 0.5775 |
-| Average top-1 score | 0.0647 | 0.0410 |
-| Avg canonical skills per non-empty module | 4.537 | 2.419 |
+| Metric | Baseline | Experimental | STEM Pipeline |
+|---|---:|---:|---:|
+| Modules evaluated | 10,507 | 10,507 | 4,431 |
+| Empty modules | 136 | 2,819 | 19 |
+| Non-empty modules | 10,371 | 7,688 | 4,412 |
+| Job group count | 119 | 119 | 119 |
+| Top-1 overlap modules | 7766 | 6068 | 4411 |
+| Top-1 overlap rate | 0.7391 | 0.5775 | 0.9955 |
+| Average top-1 score | 0.0647 | 0.0410 | 0.1562 |
+| Average top-1 good job pct | 0.6466 | 0.6824 | 0.5338 |
+| Avg canonical skills per non-empty module | 4.537 | 2.419 | 7.356 |
+| Average top-1 quality weighted alignment | 0.0385 | 0.0235 | 0.086 |
+| Average top-3 weighted good job pct | 0.3564 | 0.2843 | 0.4829 |
+
 
 Here, `non-empty modules = module_count - empty_modules`. `Top-1 overlap rate = top1_overlap_modules / module_count`, where `top1_overlap_modules` counts modules whose best-matching job group contains at least one overlapping canonical skill. `Average top-1 score = sum(top1_alignment_score_m) / N`, where `N` is the number of modules with at least one top match. `Avg canonical skills per non-empty module = (sum of canonical skill counts across non-empty modules) / (number of non-empty modules)`. The table shows that the baseline preserves more module-side signal, produces overlap for more modules, and yields stronger best-match alignments.
 
