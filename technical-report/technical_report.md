@@ -174,6 +174,14 @@ This weighting prioritises core-skill coverage and is refined with broader simil
   
 ![alt text](technical-report-images/3.3.4.B_image.png)
 
+### 3.3 Chatbot 
+
+Our chatbot enables job query in natural language, surface the most relevant job listings, and explain which university modules best match the skills employers are asking for based on the baseline canonical pipeline. 
+
+![alt text](technical-report-images/3.3.4.B_image.png)
+
+
+
 ## 4. Findings
 
 ### 4.1 Results
