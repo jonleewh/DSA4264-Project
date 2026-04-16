@@ -73,6 +73,7 @@ def build_job_rows(min_description_length: int):
                     "source": record.get("source") or "MCF",
                     "title": record.get("title"),
                     "description": desc,
+                    "is_good_job": int(record.get("is_good_job", 0) or 0),
                 }
             )
         return rows
@@ -96,6 +97,7 @@ def build_job_rows(min_description_length: int):
                 "source": record.get("sourceCode"),
                 "title": record.get("title"),
                 "description": desc,
+                "is_good_job": int(record.get("is_good_job", 0) or 0),
             }
         )
 

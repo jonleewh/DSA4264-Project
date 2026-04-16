@@ -180,6 +180,8 @@ class SentenceSemanticStemScorer:
         self._stem_centroid: np.ndarray | None = None
         self._non_stem_centroid: np.ndarray | None = None
         self.available = False
+        self._sentence_cache: dict[tuple[str, str], dict[str, float | int]] = {}
+        self._document_cache: dict[tuple[str, str], dict[str, float]] = {}
         self._initialize()
 
     def _initialize(self):
@@ -190,9 +192,17 @@ class SentenceSemanticStemScorer:
             return
 
         try:
+            print(
+                f"[STEM scope] Loading semantic model from local cache: {self.model_name}",
+                flush=True,
+            )
             self._model = SentenceTransformer(self.model_name, local_files_only=True)
         except Exception:
             try:
+                print(
+                    f"[STEM scope] Local cache unavailable, loading semantic model: {self.model_name}",
+                    flush=True,
+                )
                 self._model = SentenceTransformer(self.model_name)
             except Exception:
                 self.available = False
@@ -213,10 +223,16 @@ class SentenceSemanticStemScorer:
         self._stem_centroid = _safe_l2_normalize(np.mean(stem_vectors, axis=0, keepdims=True))[0]
         self._non_stem_centroid = _safe_l2_normalize(np.mean(non_stem_vectors, axis=0, keepdims=True))[0]
         self.available = True
+        print("[STEM scope] Semantic model ready.", flush=True)
 
     def score_sentences(self, title: str | None, description: str | None) -> dict[str, float | int]:
+        cache_key = (_norm(title), _norm(description))
+        cached = self._sentence_cache.get(cache_key)
+        if cached is not None:
+            return dict(cached)
+
         if not self.available or self._model is None or self._stem_centroid is None or self._non_stem_centroid is None:
-            return {
+            result = {
                 "support_count": 0,
                 "oppose_count": 0,
                 "total_sentences": 0,
@@ -224,10 +240,12 @@ class SentenceSemanticStemScorer:
                 "max_stem_similarity": 0.0,
                 "confidence": 0.0,
             }
+            self._sentence_cache[cache_key] = dict(result)
+            return result
 
         sentences = _split_sentences(title) + _split_sentences(description)
         if not sentences:
-            return {
+            result = {
                 "support_count": 0,
                 "oppose_count": 0,
                 "total_sentences": 0,
@@ -235,6 +253,8 @@ class SentenceSemanticStemScorer:
                 "max_stem_similarity": 0.0,
                 "confidence": 0.0,
             }
+            self._sentence_cache[cache_key] = dict(result)
+            return result
 
         vectors = self._model.encode(
             sentences,
@@ -252,7 +272,7 @@ class SentenceSemanticStemScorer:
         oppose_count = int(np.sum(oppose_mask))
         confidence = support_count / (support_count + oppose_count + 1e-9)
 
-        return {
+        result = {
             "support_count": support_count,
             "oppose_count": oppose_count,
             "total_sentences": int(len(sentences)),
@@ -260,22 +280,33 @@ class SentenceSemanticStemScorer:
             "max_stem_similarity": float(np.max(stem_scores)) if len(stem_scores) else 0.0,
             "confidence": float(confidence),
         }
+        self._sentence_cache[cache_key] = dict(result)
+        return result
 
     def score_document(self, title: str | None, description: str | None) -> dict[str, float]:
+        cache_key = (_norm(title), _norm(description))
+        cached = self._document_cache.get(cache_key)
+        if cached is not None:
+            return dict(cached)
+
         if not self.available or self._model is None or self._stem_centroid is None or self._non_stem_centroid is None:
-            return {
+            result = {
                 "stem_similarity": 0.0,
                 "non_stem_similarity": 0.0,
                 "margin": 0.0,
             }
+            self._document_cache[cache_key] = dict(result)
+            return result
 
         text = " ".join([_norm(title), _norm(description)]).strip()
         if not text:
-            return {
+            result = {
                 "stem_similarity": 0.0,
                 "non_stem_similarity": 0.0,
                 "margin": 0.0,
             }
+            self._document_cache[cache_key] = dict(result)
+            return result
 
         vector = self._model.encode(
             [text],
@@ -285,11 +316,13 @@ class SentenceSemanticStemScorer:
         )[0]
         stem_similarity = float(np.dot(vector, self._stem_centroid))
         non_stem_similarity = float(np.dot(vector, self._non_stem_centroid))
-        return {
+        result = {
             "stem_similarity": stem_similarity,
             "non_stem_similarity": non_stem_similarity,
             "margin": stem_similarity - non_stem_similarity,
         }
+        self._document_cache[cache_key] = dict(result)
+        return result
 
 
 def _stem_signal_score(title: str | None, description: str | None) -> int:
@@ -743,6 +776,7 @@ def build_scoped_rows_with_metrics(
     paragraph_non_stem_margin: float = 0.02,
     disable_semantic_encoder: bool = False,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    print("[STEM scope] Initializing scope classifier...", flush=True)
     clf = load_stem_scope_classifier(
         semantic_model=semantic_model,
         sentence_vote_diff_threshold=sentence_vote_diff_threshold,
@@ -755,7 +789,9 @@ def build_scoped_rows_with_metrics(
 
     stem_rows: list[dict[str, Any]] = []
     non_stem_rows: list[dict[str, Any]] = []
-    for row in rows:
+    total = len(rows)
+    print(f"[STEM scope] Classifying {total} module rows...", flush=True)
+    for index, row in enumerate(rows, start=1):
         meta = module_meta.get(_norm(row.get("id")), {})
         title = row.get("title")
         description = row.get("description")
@@ -808,6 +844,13 @@ def build_scoped_rows_with_metrics(
             stem_rows.append(enriched)
         else:
             non_stem_rows.append(enriched)
+
+        if index % 250 == 0 or index == total:
+            print(
+                f"[STEM scope] Processed {index}/{total} rows "
+                f"(STEM={len(stem_rows)}, non-STEM={len(non_stem_rows)})",
+                flush=True,
+            )
 
     return stem_rows, non_stem_rows
 
