@@ -190,45 +190,44 @@ The three pipelines are compared on common dataset-level metrics.
 
 ![alt text](technical-report-images/4.1_image.png)
 
-The pattern is clear: the baseline is the strongest **general-purpose** pipeline, the experimental variant is more specific in selected cases but less robust, and the STEM pipeline is strongest **within a narrowed STEM scope**.
+The pipeline results show a clear pattern. `baseline` performs best as a **general-purpose** pipeline, `experimental` produces more specific skills for some modules but less robust overall, and `STEM` performs best **within a narrow STEM scope**.
 
 The baseline provides the best balance of coverage and match quality on the full module universe. It retains high usable coverage (10,371 non-empty modules out of 10,507), achieves a strong top-1 overlap rate (0.7391), and has a higher average top-1 score (0.0647) than the experimental pipeline.
 
-From the baseline-only quality layer, top-1 matches also map to job families with moderate quality concentration (`average_top1_good_job_pct = 0.6466`), with `average_top1_quality_weighted_alignment = 0.0385` and `average_top3_weighted_good_job_pct = 0.3564`.
+The additional job-quality layer suggests top matches are linked to job families with moderate quality concentration, with `average_top1_good_job_pct = 0.6466`, `average_top1_quality_weighted_alignment = 0.0385` and `average_top3_weighted_good_job_pct = 0.3564`.
 
-The experimental pipeline was a controlled test where only the module-side extraction changed. It improved skill specificity for some modules (as explained in [Section 3.3.2](#332-experimental-pipeline)), but performance dropped at the dataset level. The largest issue is coverage loss: empty modules increase from 136 (baseline) to 2,819, with corresponding declines in top-1 overlap (0.5775) and average top-1 score (0.0410). This originates from upstream independent extraction, before canonical mapping.
+The experimental pipeline only changes the module-side extraction (controlled test). Skill specificity improved for some modules (as explained in [Section 3.3.2](#332-experimental-pipeline)), but overall performance is weaker. The main issue is coverage loss: empty modules increase from 136 (baseline) to 2,819, with corresponding declines in top-1 overlap (0.5775) and average top-1 score (0.0410). This originates from upstream independent extraction, before canonical mapping.
 
-Hence, despite better precision in selected examples, the method is not suitable for mainline use.
+The STEM pipeline delivers very strong in-scope performance, with only 19 empty modules out of 4,431, near-complete top-1 overlap (0.9998), higher average top-1 score (0.1571), and more canonical skills per non-empty module (7.356), contributing to stronger matches. These results should be interpreted as evidence of strong in-domain performance. STEM modules tend to use more standardised technical language, making them easier to classify and align.
 
-The STEM pipeline delivers very strong in-scope performance: only 19 empty modules out of 4,431, near-complete top-1 overlap (0.9998), higher average top-1 score (0.1571), and higher average canonical skills per non-empty module (7.356). These results are best interpreted as an in-domain robustness result under a semantically tighter dataset, not as direct superiority over full-universe pipelines.
-
-For general deployment, we should retain the **baseline** as the primary workflow because it is the most reliable across the full dataset. The **experimental** extractor remains a targeted R&D component for selected technical contexts. The **STEM** workflow is a strongly scoped extension for STEM-focused policy analysis where domain homogeneity is intentional.
-
+Overall, the **baseline** should remain the primary workflow for general deployment because it is the most reliable across the full dataset. The **experimental** extractor is better suited for targeted R&D use in technical domains, while the **STEM** workflow is most useful for focused policy analysis within STEM disciplines.
 
 ### 4.2 Discussion
 
-Our findings are most useful as a **decision-support signal** for curriculum review, not a direct measure of graduate readiness.
+Our findings are most useful as a **decision-support signal** for curriculum review rather than a direct measure of graduate readiness.
 
-The business value is that unstructured job and course text is converted into consistent indicators that HEPD can monitor over time. Metrics such as empty-module rate, overlap rate, and alignment score show where coverage is strong, where confidence is lower, and where manual review should be prioritised.
+The main business value is that unstructured job and course text can be transformed into consistent indicators that HEPD can monitor over time. Metrics such as empty-module rate, overlap rate, and alignment score show where curriculum coverage appears strong, where confidence is lower, and where further review may be needed.
 
-These metrics translate into operational value. Lower empty-module rates mean less manual fallback work. Higher overlap rates mean more modules can be mapped to plausible job clusters, improving departmental summaries and reducing blind spots. Stable outputs across runs make time-based comparisons more reliable and reduce policy risk from one-off interpretation. This addresses the core business problem by replacing infrequent, labour-intensive audits with a repeatable monitoring process.
+These metrics also have operational value. Lower empty-module rates reduce the manual fallback work required. Higher overlap rates mean more modules can be linked to plausible job clusters, improving departmental summaries and reducing blind spots. Stable outputs across refresh cycles also make it easier to compare results over time and reduce risk from one-off interpretations.
 
-Results should still be interpreted relatively. Absolute alignment scores are expected to be modest because a single module captures only part of a job’s full competency bundle. The practical use is to detect patterns: persistent skill gaps, weakly aligned module groups, and areas that require targeted review. Canonical skill mappings and SSOC-linked top matches provide a traceable path from source text to final scores, making results easier to audit and discuss with stakeholders. Deployability is realistic because the workflow is script-based and reproducible.
+Results should be interpreted relatively. Alignment scores are expected to be modest because a single module captures only part of a job’s full competency bundle. The main value is not the exact score itself, but its ability to identify patterns (e.g. persistent skill gaps, weakly aligned module groups, and areas that require targeted review).
 
-Overall, the business problem is **partially addressed**: the system is strong enough for structured monitoring and prioritisation, but not yet suitable for fully automated, high-stakes policy decisions.
+Canonical skill mappings and SSOC-linked top matches provide a traceable path from source text to final scores, making outputs easier to review. The reproducible workflow makes deployability realistic.
+
+Overall, the business problem is **partially addressed**. The system is strong enough for structured monitoring and prioritisation, but not yet suitable for fully automated, high-stakes policy decisions.
 
 
 ### 4.3 Limitations, Biases, Ethical Considerations
 
 Our analysis has several limitations.
 
-Firstly, **data coverage is constrained**. The job dataset is derived from a short MyCareersFuture snapshot, which may capture temporary demand patterns rather than a stable labour-market structure. Job-role filtering is rule-based (e.g. `minimum_years_experience` and keyword exclusions), which can introduce false positives and false negatives. Job skills also depend on employer-entered fields with uneven quality, potentially overrepresenting generic soft skills and undercapturing technical requirements expressed in free text. For modules, coverage is limited to three universities and catalogue-level module descriptions, without full syllabus or assessment evidence.
+Firstly, **data coverage is constrained**. The job dataset is derived from a short MyCareersFuture snapshot, which may capture temporary demand patterns rather than stable labour-market demand. Job-role filtering is rule-based (e.g. `minimum_years_experience` and keyword exclusions), which can introduce false positives and false negatives. Job skills also depend on employer-entered fields with uneven quality, potentially overrepresenting generic soft skills and undercapturing technical requirements expressed in free text. For modules, coverage is limited to three universities and catalogue-level module descriptions, without full syllabus or assessment evidence.
 
-Secondly, **modelling choices introduce uncertainty**. STEM scope classification combines metadata and semantic rules and may misclassify edge cases, especially for interdisciplinary modules. Canonical mapping improves consistency, but it may collapse distinctions that matter in practice or preserve functionally equivalent distinctions. Hence, output quality remains sensitive to taxonomy design, extraction thresholds, and mapping logic.
+Secondly, **modelling choices introduce uncertainty**. STEM scope classification combines metadata and semantic rules and may misclassify edge cases, especially for interdisciplinary modules. Canonical mapping improves consistency, but it may collapse distinctions that matter in practice or maintain distinctions that are not meaningful to employers. Hence, output quality remains sensitive to taxonomy design, extraction thresholds, and mapping logic.
 
-Thirdly, **interpretation should remain cautious**. Module-job similarity is a relevance signal, not causal evidence of programme effectiveness or graduate readiness. High alignment does not guarantee employment outcomes, and low alignment does not imply low educational value. These results should be interpreted alongside non-text evidence, including internship performance, graduate outcomes, and employer validation.
+Thirdly, **interpretation should remain cautious**. Module-job similarity is a relevance signal, not causal evidence of programme effectiveness or graduate readiness. High alignment does not guarantee employment outcomes, and low alignment does not imply low educational value. These results should be interpreted alongside external evidence, including internships, graduate outcomes, and employer validation.
 
-Lastly, **fairness and ethics are important**. Employer language in job ads should not be treated as an objective labour-market truth. A skill-overlap framing may systematically favour domains with standardised technical vocabulary and understate strengths in humanities or interdisciplinary programmes. If used without safeguards, the framework could encourage overreaction to short-term demand and underinvestment in foundational and transferable capabilities. Human review, periodic taxonomy audits, and discipline-aware interpretation are therefore necessary before high-stakes policy use.
+Lastly, **labour-market bias and interpretation risks are important considerations**. Employer language in job ads should not be treated as an objective labour-market truth. A skill-overlap framing may systematically favour domains with standardised technical vocabulary and understate strengths in humanities or interdisciplinary programmes. If used without safeguards, the framework could encourage overreaction to short-term demand and underinvestment in foundational and transferable capabilities. Human review, periodic taxonomy audits, and discipline-specific interpretation are therefore necessary before high-stakes policy use.
 
 
 ### 4.4 Recommendations
