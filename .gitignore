@@ -74,3 +74,6 @@ env/
 .DS_Store
 Thumbs.db
 
+# DOCUMENTATION BUILD OUTPUTS
+site/
+.cache/

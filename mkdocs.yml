@@ -1,0 +1,21 @@
+site_name: DSA4264 Technical Report
+site_description: Curriculum-labour alignment technical report
+site_url: https://jonleewh.github.io/DSA4264-Project/
+repo_url: https://github.com/jonleewh/DSA4264-Project
+docs_dir: technical-report
+site_dir: site
+exclude_docs: |
+  technical_report old.md
+
+theme:
+  name: material
+
+nav:
+  - Technical Report: technical_report.md
+
+markdown_extensions:
+  - tables
+  - toc:
+      permalink: true
+  - attr_list
+  - md_in_html
