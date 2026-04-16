@@ -11,7 +11,7 @@ theme:
   name: material
 
 nav:
-  - Technical Report: technical_report.md
+  - Technical Report: index.md
 
 markdown_extensions:
   - tables
