@@ -139,7 +139,7 @@ Module scope is determined using a **hybrid STEM classifier**:
 
 4. If still unresolved, we apply a quantitative STEM keyword rule (`quant_min_score = 2`) with contextual safeguards (false-positive terms, non-STEM context checks, and blocklists).
 
-![Figure 2: Sankey Diagram for STEM Scope Classification](../src/stem_test/stem_1_sankey_diagram.png)
+![Figure 2: Sankey Diagram for STEM Scope Classification](technical-report-images/stem_1_sankey_diagram.png)
 
 This layered design prevents isolated technical words from misclassifying non-STEM modules (e.g. humanities descriptions containing terms like “regression”). After STEM scoping, downstream stages remain unchanged, so observed differences are attributable mainly to scope and extraction effects.
 
@@ -192,7 +192,7 @@ The three pipelines are compared on common dataset-level metrics.
 
 The pipeline results show a clear pattern. `baseline` performs best as a **general-purpose** pipeline, `experimental` produces more specific skills for some modules but less robust overall, and `STEM` performs best **within a narrow STEM scope**.
 
-The baseline provides the best balance of coverage and match quality on the full module universe. It retains high usable coverage (10,371 non-empty modules out of 10,507), achieves a strong top-1 overlap rate (0.7391), and has a higher average top-1 score (0.0647) than the experimental pipeline.
+The baseline provides the best balance of coverage and match quality on the full module universe. It retains high usable coverage (10,371 non-empty modules out of 10,507), and has a strong top-1 overlap rate (0.7391) and average top-1 score (0.0647) than the experimental pipeline.
 
 The additional job-quality layer suggests top matches are linked to job families with moderate quality concentration, with `average_top1_good_job_pct = 0.6466`, `average_top1_quality_weighted_alignment = 0.0385` and `average_top3_weighted_good_job_pct = 0.3564`.
 
