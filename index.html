@@ -1,0 +1,1005 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Curriculum-labour alignment technical report">
+      
+      
+      
+        <link rel="canonical" href="https://jonleewh.github.io/DSA4264-Project/">
+      
+      
+      
+      
+      <link rel="icon" href="assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.39">
+    
+    
+      
+        <title>DSA4264 Technical Report</title>
+      
+    
+    
+      <link rel="stylesheet" href="assets/stylesheets/main.8c3ca2c6.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#technical-report" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="." title="DSA4264 Technical Report" class="md-header__button md-logo" aria-label="DSA4264 Technical Report" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            DSA4264 Technical Report
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Technical Report
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jonleewh/DSA4264-Project" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="." title="DSA4264 Technical Report" class="md-nav__button md-logo" aria-label="DSA4264 Technical Report" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    DSA4264 Technical Report
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jonleewh/DSA4264-Project" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Technical Report
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="." class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Technical Report
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Context
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Scope
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Scope">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      2.1 Problem
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-success-criteria" class="md-nav__link">
+    <span class="md-ellipsis">
+      2.2 Success Criteria
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-assumptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      2.3 Assumptions
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-methodology" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Methodology
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Methodology">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-technical-assumptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.1 Technical Assumptions
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.2 Data
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.2 Data">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#321-jobs-data-cleaning" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.2.1 Jobs Data Cleaning
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.2.1 Jobs Data Cleaning">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#definition-of-a-good-job" class="md-nav__link">
+    <span class="md-ellipsis">
+      Definition of a "good job"
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#322-university-data-cleaning" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.2.2 University Data Cleaning
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#323-skill-standardisation" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.2.3 Skill Standardisation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-experimental-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.3 Experimental Design
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.3 Experimental Design">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#331-baseline-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.3.1 Baseline Pipeline
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#332-experimental-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.3.2 Experimental Pipeline
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#333-stem-robustness-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.3.3 STEM Robustness Pipeline
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#334-evaluation-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.3.4 Evaluation Metrics
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-chatbot" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.3 Chatbot
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-findings" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Findings
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Findings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      4.1 Results
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-discussion" class="md-nav__link">
+    <span class="md-ellipsis">
+      4.2 Discussion
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-limitations-biases-ethical-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      4.3 Limitations, Biases, Ethical Considerations
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#44-recommendations" class="md-nav__link">
+    <span class="md-ellipsis">
+      4.4 Recommendations
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Context
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Scope
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Scope">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      2.1 Problem
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-success-criteria" class="md-nav__link">
+    <span class="md-ellipsis">
+      2.2 Success Criteria
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-assumptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      2.3 Assumptions
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-methodology" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Methodology
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Methodology">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-technical-assumptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.1 Technical Assumptions
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.2 Data
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.2 Data">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#321-jobs-data-cleaning" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.2.1 Jobs Data Cleaning
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.2.1 Jobs Data Cleaning">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#definition-of-a-good-job" class="md-nav__link">
+    <span class="md-ellipsis">
+      Definition of a "good job"
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#322-university-data-cleaning" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.2.2 University Data Cleaning
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#323-skill-standardisation" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.2.3 Skill Standardisation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-experimental-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.3 Experimental Design
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.3 Experimental Design">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#331-baseline-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.3.1 Baseline Pipeline
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#332-experimental-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.3.2 Experimental Pipeline
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#333-stem-robustness-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.3.3 STEM Robustness Pipeline
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#334-evaluation-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.3.4 Evaluation Metrics
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-chatbot" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.3 Chatbot
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-findings" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Findings
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Findings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      4.1 Results
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-discussion" class="md-nav__link">
+    <span class="md-ellipsis">
+      4.2 Discussion
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-limitations-biases-ethical-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      4.3 Limitations, Biases, Ethical Considerations
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#44-recommendations" class="md-nav__link">
+    <span class="md-ellipsis">
+      4.4 Recommendations
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="technical-report">Technical Report<a class="headerlink" href="#technical-report" title="Permanent link">&para;</a></h1>
+<h2 id="1-context">1. Context<a class="headerlink" href="#1-context" title="Permanent link">&para;</a></h2>
+<p>In recent years, concerns have emerged over declining employment outcomes among fresh graduates in Singapore. The 2025 Graduate Employment Survey (GES) reported a <a href="https://www.straitstimes.com/singapore/parenting-education/fewer-fresh-uni-graduates-in-2025-found-full-time-work-but-pay-held-steady-survey">decline in full-time permanent employment despite stable median salaries</a>, while surveys indicate <a href="https://www.channelnewsasia.com/singapore/fresh-graduates-university-job-search-cna-poll-5288556">increasing anxiety among graduates on job prospects</a>.</p>
+<p>These trends raise important questions about the alignment between higher education and labour market demands. Current analyses rely on aggregate outcomes, lacking visibility into specific skills or curriculum components contributing to employability outcomes. While universities continue to equip students with theoretical knowledge and foundational skills, the evolving nature of industry requirements, driven by technological advancements and shifting economic conditions, may result in a mismatch between what is taught and what employers seek.</p>
+<p>Hence, this project answers a key question: <strong>How well are university courses preparing students for real-world jobs?</strong> By analysing job descriptions alongside university course content, we aim to systematically evaluate the extent to which academic curricula align with current industry skill requirements, and to identify potential gaps that may contribute to graduate employment challenges.</p>
+<h2 id="2-scope">2. Scope<a class="headerlink" href="#2-scope" title="Permanent link">&para;</a></h2>
+<h3 id="21-problem">2.1 Problem<a class="headerlink" href="#21-problem" title="Permanent link">&para;</a></h3>
+<p><strong>MOE’s Higher Education Policy Division (HEPD)</strong> must ensure university curricula stay aligned with labour market needs. This problem is ongoing and high-frequency: job requirements evolve continuously, while universities update courses on slower academic cycles. Hence, HEPD needs a repeatable way to compare what students are taught against what employers currently demand.</p>
+<p>Job ads and course descriptions are <strong>large-scale</strong>, <strong>unstructured</strong>, and continuously changing. Manual reviews and periodic audits are resource-intensive and typically run on multi-year cycles, which limits HEPD’s ability to respond quickly.</p>
+<p>The impact is tangible. If alignment is weak, graduates face poorer employment outcomes. Recent graduate employment results have shown declines in full-time employment. Lagged detection of emerging skill gaps delays interventions and reduces policy effectiveness. Without a scalable approach, HEPD risks making decisions on outdated evidence.</p>
+<p>Data science and machine learning are appropriate as they directly address scale, variability, and timeliness. <strong>Natural language processing</strong> can extract and standardise skill signals from messy text; <strong>embedding models</strong> can place job and course content in a shared semantic space and quantify alignment using similarity scores; and <strong>automated pipelines</strong> can run continuously, turning a manual, periodic process into near real-time monitoring. This enables faster, more consistent, and evidence-based curriculum policy decisions.</p>
+<h3 id="22-success-criteria">2.2 Success Criteria<a class="headerlink" href="#22-success-criteria" title="Permanent link">&para;</a></h3>
+<p>The project is successful if it helps HEPD and universities <strong>assess alignment of curriculum content with employer demand</strong>, and use this to <strong>improve curriculum planning</strong>. It should also produce practical employability insights by <strong>linking courses to relevant job opportunities and associated market signals</strong>, so HEPD can make better decisions.</p>
+<p>Operationally, success means the system can process large unstructured datasets reliably and efficiently through automated workflows, including cleaning, skill extraction, embedding, and matching, <strong>reducing analysis time from manual cycles to repeatable runs</strong>. It should also produce stable, interpretable alignment scores that reflect meaningful skill overlap while minimising noise from irrelevant text.</p>
+<h3 id="23-assumptions">2.3 Assumptions<a class="headerlink" href="#23-assumptions" title="Permanent link">&para;</a></h3>
+<p>This project assumes HEPD and universities require a repeatable curriculum-labour monitoring process and have the capacity to review flagged findings. We assume continued access to job and module data, and that stakeholders will use the outputs for prioritisation rather than automated decisions. We also assume directional evidence is decision-useful even if not perfectly predictive. If stakeholder ownership, data access, or review capacity changes, the problem framing, success criteria, and feasibility will change.</p>
+<h2 id="3-methodology">3. Methodology<a class="headerlink" href="#3-methodology" title="Permanent link">&para;</a></h2>
+<h3 id="31-technical-assumptions">3.1 Technical Assumptions<a class="headerlink" href="#31-technical-assumptions" title="Permanent link">&para;</a></h3>
+<p>We treat job ads and module descriptions as proxies for demanded and taught skills. If either proxy is weak, the model can still compute scores, but those scores will not reflect real curriculum-labour alignment.</p>
+<p>Another critical assumption is <strong>extraction recall</strong>. The alignment model only uses extracted module skills, so when extraction is sparse, many modules become effectively unscorable and coverage drops, and performance differences mostly reflect upstream extraction quality rather than true alignment differences.</p>
+<p>Finally, we assume canonical mapping makes module and job skills comparable enough for overlap-based scoring at SSOC-3 level. If mapping fails, scores capture wording mismatch instead of substantive skill match, so outputs should be interpreted as relevance signals, not causal evidence.</p>
+<h3 id="32-data">3.2 Data<a class="headerlink" href="#32-data" title="Permanent link">&para;</a></h3>
+<h4 id="321-jobs-data-cleaning">3.2.1 Jobs Data Cleaning<a class="headerlink" href="#321-jobs-data-cleaning" title="Permanent link">&para;</a></h4>
+<p><code>data_cleaning_jobs_merged.ipynb</code> runs as follows:</p>
+<p><img alt="alt text" src="technical-report-images/3.2.1_image.png" /></p>
+<p><code>data_cleaning_jobs_merged.ipynb</code> converts 22,718 raw postings into an analysis-ready job dataset focused on <strong>entry-level demand</strong>. Records are first flattened into a standard schema (job metadata, text fields, salary, and SSOC codes), and HTML is removed from descriptions to reduce formatting noise.</p>
+<p>Descriptions, salary, employment_type, and skills were cleaned and standardised, and missing <code>work_type</code> was inferred within SSOC-3 groups, and generic or duplicate skills were removed. </p>
+<h5 id="definition-of-a-good-job">Definition of a "good job"<a class="headerlink" href="#definition-of-a-good-job" title="Permanent link">&para;</a></h5>
+<pre><code>goodness of job = 0.6 * avg_salary + 0.15 * has_flexible_work + 0.15 * is_permanent_fulltime + 0.1 * vacancy_score 
+</code></pre>
+<ul>
+<li><code>avg_salary</code> gets the highest weight (<strong>0.6</strong>) because income is the most common priority and goal in employment</li>
+<li><code>has_flexible_work</code> adds <strong>0.15</strong> because fleixible work enhances employee well-being and better work-life balance</li>
+<li><code>is_permanent_fulltime</code> adds <strong>0.15</strong> as working full-time in a permanent role gives the most job stability</li>
+<li><code>vacancy_score</code> adds <strong>0.1</strong> due to more job vacancy leading to greater ease of securing employment</li>
+</ul>
+<p>Computed goodness of job score is normalised between 0 and 1 to increase interpretability, with 1 being highest score. Good jobs are defined as those with score above 70th percentile, which is added in binary field <code>is_good_job</code>. </p>
+<p>The final output (<code>jobs_cleaned.pkl</code>) contains <strong>7,104 postings</strong> (<strong>6,448 full-time; 656 part-time</strong>) with an average of <strong>12.76 cleaned skills per posting</strong>, followed by descriptive checks to validate plausibility before downstream modelling.</p>
+<h4 id="322-university-data-cleaning">3.2.2 University Data Cleaning<a class="headerlink" href="#322-university-data-cleaning" title="Permanent link">&para;</a></h4>
+<p><code>data_cleaning_university_merged.ipynb</code> standardises module data from NUS, NTU and SUTD into one dataset for skill extraction and alignment analysis. Core fields such as <code>module code</code>, <code>title</code>, <code>description</code>, <code>department</code> and <code>university</code> are harmonised despite source-level schema differences, with NTU department codes mapped via a table (<code>ntu_dept_mapping.xlsx</code>).</p>
+<p>The dataset was filtered to undergraduate-relevant content by removing records with missing critical fields, minimal descriptions, and modules flagged as postgraduate or out-of-scope faculties. Module descriptions were normalised and cleaned to improve comparability across institutions and support downstream embedding-based analysis.</p>
+<p>A unified, consistent dataset is saved as the source of truth for downstream skill mapping and curriculum-job matching. The final output (<code>combined_courses_cleaned.pkl</code>) retained module counts of <strong>8,499</strong> (NUS), <strong>1,817</strong> (NTU), and <strong>199</strong> (SUTD), respectively.</p>
+<h4 id="323-skill-standardisation">3.2.3 Skill Standardisation<a class="headerlink" href="#323-skill-standardisation" title="Permanent link">&para;</a></h4>
+<p>A shared canonical framework (<code>canonical_skill_framework_v4.json</code>) standardises both module and job skills before alignment. The framework contains <strong>89 canonical skills</strong> and <strong>24 excluded phrases</strong>.</p>
+<p><img alt="alt text" src="technical-report-images/3.2.3_image.png" /></p>
+<p>This staged process improves cross-source comparability while limiting brittle phrase mismatch. <code>module_skill_rules.py</code> provides additional phrase-to-skill rules, allowed labels, and blocklists to improve consistency on the module side.</p>
+<h3 id="33-experimental-design">3.3 Experimental Design<a class="headerlink" href="#33-experimental-design" title="Permanent link">&para;</a></h3>
+<p>Our baseline, experimental and STEM pipeline converts cleaned modules and jobs into comparable skill profiles, maps them into a shared canonical vocabulary, and computes module-job alignment.</p>
+<h4 id="331-baseline-pipeline">3.3.1 Baseline Pipeline<a class="headerlink" href="#331-baseline-pipeline" title="Permanent link">&para;</a></h4>
+<p>The baseline workflow (<code>src/create_test/run_baseline_pipeline.sh</code>) starts from two cleaned sources: course modules (<code>combined_courses_cleaned.pkl</code>) and jobs (<code>jobs_cleaned.pkl</code>).</p>
+<p><img alt="alt text" src="technical-report-images/3.3.1_image.png" /></p>
+<p>The pipeline has four key stages:</p>
+<ol>
+<li>
+<p><code>create_test_datasets.py</code> exports clean module/job datasets.</p>
+</li>
+<li>
+<p><code>build_canonical_skill_framework.py</code> constructs a shared skill vocabulary from canonical labels, aliases, and excluded phrases; this ensures module and job text are compared in the same skill space.</p>
+</li>
+<li>
+<p><code>canonical_skill_mapper.py</code> maps raw phrases to canonical skills using staged logic: normalisation, exclusion checks, exact/alias matching, then semantic fallback (<code>all-MiniLM-L6-v2</code>, cosine threshold 0.72).</p>
+</li>
+<li>
+<p><code>align_module_job_canonical.py</code> groups jobs at SSOC-3 and computes module-job alignment scores using coverage, weighted Jaccard, cosine similarity, and a gap penalty.</p>
+</li>
+</ol>
+<p>We then apply a job-quality layer via <code>good_job_pct</code> and report both raw alignment and quality-weighted alignment.</p>
+<h4 id="332-experimental-pipeline">3.3.2 Experimental Pipeline<a class="headerlink" href="#332-experimental-pipeline" title="Permanent link">&para;</a></h4>
+<p>The experimental workflow (<code>src/create_test/run_experimental_pipeline.sh</code>) changes only one component: module-side skill extraction. Instead of notebook-derived module skills, <code>experimental/extract_module_skills_independent.py</code> extracts skills directly from descriptions using n-gram candidates, MiniLM relevance ranking, rule constraints (<code>module_skill_rules.py</code>), and canonical normalisation.</p>
+<p>All other components are kept fixed to isolate the causal impact of the extractor change. This is a controlled component-level comparison, not a full pipeline redesign.</p>
+<p>The following examples show why this variant was tested; modules can receive more technically specific skill tags under the independent extractor.</p>
+<p><img alt="alt text" src="technical-report-images/3.3.2_image.png" /></p>
+<h4 id="333-stem-robustness-pipeline">3.3.3 STEM Robustness Pipeline<a class="headerlink" href="#333-stem-robustness-pipeline" title="Permanent link">&para;</a></h4>
+<p>We run a STEM-focused variant of the pipeline to reduce cross-domain noise from non-technical modules, test robustness and check whether alignment behaviour remains stable in a tighter technical scope.</p>
+<p>Module scope is determined using a <strong>hybrid STEM classifier</strong>:</p>
+<ol>
+<li>
+<p>Modules from predefined STEM faculties/departments are automatically labelled STEM.</p>
+</li>
+<li>
+<p>For the remaining modules, we embed the title and description and compare against STEM and non-STEM prototype centroids.</p>
+</li>
+<li>If the margin is strongly positive (<code>&gt;= 6%</code>), we classify it as STEM.  </li>
+<li>
+<p>If strongly negative (<code>&lt;= -2%</code>), block STEM override.</p>
+</li>
+<li>
+<p>If the margin is inconclusive (<code>-2%</code> to <code>6%</code>), we score sentence-level margins (<code>±0.04</code>) and require both:</p>
+</li>
+<li>non-negative document margin, and</li>
+<li>
+<p>more supporting than opposing sentences (at least +1 net support).</p>
+</li>
+<li>
+<p>If still unresolved, we apply a quantitative STEM keyword rule (<code>quant_min_score = 2</code>) with contextual safeguards (false-positive terms, non-STEM context checks, and blocklists).</p>
+</li>
+</ol>
+<p><img alt="Figure 2: Sankey Diagram for STEM Scope Classification" src="technical-report-images/stem_1_sankey_diagram.png" /></p>
+<p>This layered design prevents isolated technical words from misclassifying non-STEM modules (e.g. humanities descriptions containing terms like “regression”). After STEM scoping, downstream stages remain unchanged, so observed differences are attributable mainly to scope and extraction effects.</p>
+<p>Apart from the STEM-specific scoping and module extraction, the <code>stem_test</code> pipeline keeps a similar downstream alignment backbone as <code>baseline</code>.</p>
+<h4 id="334-evaluation-metrics">3.3.4 Evaluation Metrics<a class="headerlink" href="#334-evaluation-metrics" title="Permanent link">&para;</a></h4>
+<p>We evaluate the methodology at two levels:</p>
+<ol>
+<li><strong>Module-to-job-family matching quality</strong> (does each module map to a plausible labour-demand profile?)</li>
+<li><strong>Pipeline-level reliability</strong> (does the method work consistently across the full dataset?)</li>
+</ol>
+<p>For model selection, we primarily optimise <strong><code>top1_overlap_rate</code></strong>, while checking <strong><code>empty_modules</code></strong> and <strong><code>average_top1_score</code></strong> as guardrails. This is the most appropriate choice as our goal is not just high similarity scores, but <strong>credible, skill-grounded matches</strong> between modules and job families at scale.</p>
+<p><strong>Alignment component metrics (used inside module-job scoring)</strong></p>
+<p><img alt="alt text" src="technical-report-images/3.3.4.A_image.png" /> </p>
+<p>The final alignment score is a weighted blend with <strong>heuristic, policy-facing priorities</strong>:</p>
+<p><code>alignment_score = 0.4 * coverage + 0.25 * weighted_jaccard + 0.2 * cosine_similarity + 0.15 * (1 - gap_score)</code></p>
+<ul>
+<li><code>coverage_top_k</code> gets the highest weight (<strong>0.40</strong>) because teaching the most demanded job-family skills is the primary objective.</li>
+<li><code>weighted_jaccard</code> gets <strong>0.25</strong> to reward stronger weighted overlap and penalise broad mismatch.</li>
+<li><code>cosine_similarity</code> gets <strong>0.20</strong> as a secondary global-similarity signal.</li>
+<li><code>(1 - gap_score)</code> gets <strong>0.15</strong> to penalise missing important skills without over-dominating the score.</li>
+</ul>
+<p>This weighting prioritises core-skill coverage and is refined with broader similarity and explicit gap penalties.</p>
+<p><strong>Pipeline-level evaluation metrics (reported at dataset level)</strong></p>
+<p><img alt="alt text" src="technical-report-images/3.3.4.B_image.png" /></p>
+<h3 id="33-chatbot">3.3 Chatbot<a class="headerlink" href="#33-chatbot" title="Permanent link">&para;</a></h3>
+<p>Our chatbot enables job query in natural language, surface the most relevant job listings, and explain which university modules best match the skills employers are asking for based on the baseline canonical pipeline. </p>
+<p><img alt="alt text" src="technical-report-images/3.3.4.B_image.png" /></p>
+<h2 id="4-findings">4. Findings<a class="headerlink" href="#4-findings" title="Permanent link">&para;</a></h2>
+<h3 id="41-results">4.1 Results<a class="headerlink" href="#41-results" title="Permanent link">&para;</a></h3>
+<p>The three pipelines are compared on common dataset-level metrics.</p>
+<p><img alt="alt text" src="technical-report-images/4.1_image.png" /></p>
+<p>The pipeline results show a clear pattern. <code>baseline</code> performs best as a <strong>general-purpose</strong> pipeline, <code>experimental</code> produces more specific skills for some modules but less robust overall, and <code>STEM</code> performs best <strong>within a narrow STEM scope</strong>.</p>
+<p>The baseline provides the best balance of coverage and match quality on the full module universe. It retains high usable coverage (10,371 non-empty modules out of 10,507), achieves a strong top-1 overlap rate (0.7391), and has a higher average top-1 score (0.0647) than the experimental pipeline.</p>
+<p>The additional job-quality layer suggests top matches are linked to job families with moderate quality concentration, with <code>average_top1_good_job_pct = 0.6466</code>, <code>average_top1_quality_weighted_alignment = 0.0385</code> and <code>average_top3_weighted_good_job_pct = 0.3564</code>.</p>
+<p>The experimental pipeline only changes the module-side extraction (controlled test). Skill specificity improved for some modules (as explained in <a href="#332-experimental-pipeline">Section 3.3.2</a>), but overall performance is weaker. The main issue is coverage loss: empty modules increase from 136 (baseline) to 2,819, with corresponding declines in top-1 overlap (0.5775) and average top-1 score (0.0410). This originates from upstream independent extraction, before canonical mapping.</p>
+<p>The STEM pipeline delivers very strong in-scope performance, with only 19 empty modules out of 4,431, near-complete top-1 overlap (0.9998), higher average top-1 score (0.1571), and more canonical skills per non-empty module (7.356), contributing to stronger matches. These results should be interpreted as evidence of strong in-domain performance. STEM modules tend to use more standardised technical language, making them easier to classify and align.</p>
+<p>Overall, the <strong>baseline</strong> should remain the primary workflow for general deployment because it is the most reliable across the full dataset. The <strong>experimental</strong> extractor is better suited for targeted R&amp;D use in technical domains, while the <strong>STEM</strong> workflow is most useful for focused policy analysis within STEM disciplines.</p>
+<h3 id="42-discussion">4.2 Discussion<a class="headerlink" href="#42-discussion" title="Permanent link">&para;</a></h3>
+<p>Our findings are most useful as a <strong>decision-support signal</strong> for curriculum review rather than a direct measure of graduate readiness.</p>
+<p>The main business value is that unstructured job and course text can be transformed into consistent indicators that HEPD can monitor over time. Metrics such as empty-module rate, overlap rate, and alignment score show where curriculum coverage appears strong, where confidence is lower, and where further review may be needed.</p>
+<p>These metrics also have operational value. Lower empty-module rates reduce the manual fallback work required. Higher overlap rates mean more modules can be linked to plausible job clusters, improving departmental summaries and reducing blind spots. Stable outputs across refresh cycles also make it easier to compare results over time and reduce risk from one-off interpretations.</p>
+<p>Results should be interpreted relatively. Alignment scores are expected to be modest because a single module captures only part of a job’s full competency bundle. The main value is not the exact score itself, but its ability to identify patterns (e.g. persistent skill gaps, weakly aligned module groups, and areas that require targeted review).</p>
+<p>Canonical skill mappings and SSOC-linked top matches provide a traceable path from source text to final scores, making outputs easier to review. The reproducible workflow makes deployability realistic.</p>
+<p>Overall, the business problem is <strong>partially addressed</strong>. The system is strong enough for structured monitoring and prioritisation, but not yet suitable for fully automated, high-stakes policy decisions.</p>
+<h3 id="43-limitations-biases-ethical-considerations">4.3 Limitations, Biases, Ethical Considerations<a class="headerlink" href="#43-limitations-biases-ethical-considerations" title="Permanent link">&para;</a></h3>
+<p>Our analysis has several limitations.</p>
+<p>Firstly, <strong>data coverage is constrained</strong>. The job dataset is derived from a short MyCareersFuture snapshot, which may capture temporary demand patterns rather than stable labour-market demand. Job-role filtering is rule-based (e.g. <code>minimum_years_experience</code> and keyword exclusions), which can introduce false positives and false negatives. Job skills also depend on employer-entered fields with uneven quality, potentially overrepresenting generic soft skills and undercapturing technical requirements expressed in free text. For modules, coverage is limited to three universities and catalogue-level module descriptions, without full syllabus or assessment evidence.</p>
+<p>Secondly, <strong>modelling choices introduce uncertainty</strong>. STEM scope classification combines metadata and semantic rules and may misclassify edge cases, especially for interdisciplinary modules. Canonical mapping improves consistency, but it may collapse distinctions that matter in practice or maintain distinctions that are not meaningful to employers. Hence, output quality remains sensitive to taxonomy design, extraction thresholds, and mapping logic.</p>
+<p>Thirdly, <strong>interpretation should remain cautious</strong>. Module-job similarity is a relevance signal, not causal evidence of programme effectiveness or graduate readiness. High alignment does not guarantee employment outcomes, and low alignment does not imply low educational value. These results should be interpreted alongside external evidence, including internships, graduate outcomes, and employer validation.</p>
+<p>Lastly, <strong>labour-market bias and interpretation risks are important considerations</strong>. Employer language in job ads should not be treated as an objective labour-market truth. A skill-overlap framing may systematically favour domains with standardised technical vocabulary and understate strengths in humanities or interdisciplinary programmes. If used without safeguards, the framework could encourage overreaction to short-term demand and underinvestment in foundational and transferable capabilities. Human review, periodic taxonomy audits, and discipline-specific interpretation are therefore necessary before high-stakes policy use.</p>
+<h3 id="44-recommendations">4.4 Recommendations<a class="headerlink" href="#44-recommendations" title="Permanent link">&para;</a></h3>
+<p>Our project has the potential to create business value for MOE HEPD and universities. The appropriate next step is <strong>staged deployment</strong> rather than immediate full-scale operationalisation.</p>
+<p>We should first deploy the system as an internal decision-support tool through a <strong>controlled pilot</strong> (e.g. STEM-focused or selected faculties). Expansion should proceed only if key conditions are met over repeated refresh cycles: low and stable empty-module rates, reproducible outputs, and analyst validation that sampled matches are substantively plausible and useful for policy workflow.</p>
+<p>Next, <strong>high-impact data constraints should be addressed before broader rollout</strong>. Job data should be expanded beyond a one-week single-source snapshot to include <strong>additional job portals</strong> (e.g. LinkedIn, Careers@Gov) and a <strong>longer time horizon</strong>. Graduate role labelling should move beyond simple experience filters, and job-side extraction should incorporate richer free-text signals. On the curriculum side, incorporating <strong>more detailed syllabus and assessment information (where feasible)</strong> is likely to improve alignment quality more than further tuning of scoring weights alone.</p>
+<p>From a cost perspective, deployment is feasible but requires <strong>deliberate investment</strong> in ingestion automation, workflow orchestration, quality checks, reporting interfaces, and ongoing taxonomy maintenance. These costs are justified if the system reduces manual audit burden and improves the timeliness of curriculum-risk detection. If pilot criteria are not met after planned iterations, the project should be narrowed to exploratory analytics or closed. If criteria are met, the system should be institutionalised as a recurring monitoring capability that informs, but does not replace, expert policy judgment.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": ".", "features": [], "search": "assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="assets/javascripts/bundle.525ec568.min.js"></script>
+      
+    
+  </body>
+</html>
