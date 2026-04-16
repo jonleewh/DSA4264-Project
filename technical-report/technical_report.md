@@ -52,15 +52,24 @@ Finally, we assume canonical mapping makes module and job skills comparable enou
 
 `data_cleaning_jobs_merged.ipynb` converts 22,718 raw postings into an analysis-ready job dataset focused on **entry-level demand**. Records are first flattened into a standard schema (job metadata, text fields, salary, and SSOC codes), and HTML is removed from descriptions to reduce formatting noise.
 
-Descriptions, salary, employment_type, and skills were cleaned and standardised, and missing `work_type` was inferred within SSOC-3 groups, and generic or duplicate skills were removed.
-
-The final output (`jobs_cleaned.pkl`) contains **7,104 postings** (**6,448 full-time; 656 part-time**) with an average of **12.76 cleaned skills per posting**, followed by descriptive checks to validate plausibility before downstream modelling.
+Descriptions, salary, employment_type, and skills were cleaned and standardised, and missing `work_type` was inferred within SSOC-3 groups, and generic or duplicate skills were removed. 
 
 ##### Definition of a "good job"
 
 ```
 goodness of job = 0.6 * avg_salary + 0.15 * has_flexible_work + 0.15 * is_permanent_fulltime + 0.1 * vacancy_score 
 ```
+
+- `avg_salary` gets the highest weight (**0.6**) because income is the most common priority and goal in employment
+- `has_flexible_work` adds **0.15** because fleixible work enhances employee well-being and better work-life balance
+- `is_permanent_fulltime` adds **0.15** as working full-time in a permanent role gives the most job stability
+- `vacancy_score` adds **0.1** due to more job vacancy leading to greater ease of securing employment
+
+Computed goodness of job score is normalised between 0 and 1 to increase interpretability, with 1 being highest score. Good jobs are defined as those with score above 70th percentile, which is added in binary field `is_good_job`. 
+
+The final output (`jobs_cleaned.pkl`) contains **7,104 postings** (**6,448 full-time; 656 part-time**) with an average of **12.76 cleaned skills per posting**, followed by descriptive checks to validate plausibility before downstream modelling.
+
+
 #### 3.2.2 University Data Cleaning
 
 `data_cleaning_university_merged.ipynb` standardises module data from NUS, NTU and SUTD into one dataset for skill extraction and alignment analysis. Core fields such as `module code`, `title`, `description`, `department` and `university` are harmonised despite source-level schema differences, with NTU department codes mapped via a table (`ntu_dept_mapping.xlsx`).
